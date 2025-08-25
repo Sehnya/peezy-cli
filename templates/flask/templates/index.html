@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>{{ app_name }}</h1>
+        <p>A Flask web application scaffolded with peezy.</p>
+      </header>
+
+      <section class="features">
+        <div class="feature">
+          <h2>🚀 Ready to Go</h2>
+          <p>Your Flask app is set up and ready for development.</p>
+        </div>
+
+        <div class="feature">
+          <h2>🔧 API Endpoints</h2>
+          <p>
+            <a href="/api/health" target="_blank">Health Check</a> |
+            <a href="/api/hello" target="_blank">Hello API</a>
+          </p>
+        </div>
+
+        <div class="feature">
+          <h2>📚 Learn More</h2>
+          <p>
+            <a href="https://flask.palletsprojects.com/" target="_blank"
+              >Flask Documentation</a
+            >
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

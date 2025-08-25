@@ -1,0 +1,58 @@
+# Source files
+src/
+tsconfig.json
+jest.config.js
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Testing
+coverage/
+**/__tests__/**
+**/*.test.ts
+**/*.test.js
+
+# Development dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts (keep dist/ since it's needed)
+# dist/ - commented out because we need this
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package files
+*.tgz
+*.tar.gz
+
+# Session files
+session.md
+test-*/
