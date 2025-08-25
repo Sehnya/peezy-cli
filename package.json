@@ -1,6 +1,6 @@
 {
   "name": "peezy-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Initialize projects across runtimes (Bun/Node, Flask/FastAPI, React/Vue) — instantly.",
   "type": "module",
   "bin": {
