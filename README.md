@@ -31,7 +31,7 @@ peezy new
 peezy new bun-react-tailwind my-app
 
 # With options
-peezy new flask my-api --pm npm --no-git
+peezy new bun-react-tailwind my-app --pm npm --no-git
 ```
 
 ### Available Commands
@@ -45,6 +45,22 @@ peezy new
 
 # Create with specific template
 peezy new <template> <name> [options]
+
+# Environment & project health
+peezy doctor [--fix-lint] [--fix-env-examples] [--ports 3000,5173,8000]
+
+# Typed env management
+peezy env check
+peezy env diff
+peezy env generate            # generate .env.example from schema JSON
+peezy env pull:railway        # stubbed
+peezy env push:railway        # stubbed
+
+# README/CHANGELOG generator
+peezy readme [--name app] [--no-badges] [--changelog]
+
+# Check for updates
+peezy upgrade [--dry-run]
 ```
 
 ### Options
@@ -75,8 +91,9 @@ peezy new <template> <name> [options]
 # Create a React app with Bun
 peezy new bun-react-tailwind my-react-app
 
-# Create a Flask API
-peezy new flask my-api --pm pip
+# Create a Flask API (Python dependencies installed manually)
+peezy new flask my-api --no-install
+cd my-api && python -m pip install -r requirements.txt
 
 # Create a Vue app with npm
 peezy new vite-vue-tailwind my-vue-app --pm npm
@@ -99,9 +116,9 @@ All templates include:
 
 ## Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.19.0 or higher (required for Vite 6)
 - Git (optional, for repository initialization)
-- Python 3.8+ (for Python templates)
+- Python 3.10+ (for Python templates, 3.8-3.9 are EOL)
 
 ## Development
 

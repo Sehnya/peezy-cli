@@ -15,7 +15,7 @@ A Flask web application with modern features and best practices.
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip (Python package installer)
 
 ### Installation

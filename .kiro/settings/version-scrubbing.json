@@ -1,0 +1,49 @@
+{
+  "schedule": {
+    "frequency": "weekly",
+    "time": "09:00",
+    "timezone": "UTC"
+  },
+  "monitoring": {
+    "runtimes": ["nodejs", "python", "bun"],
+    "frameworks": ["react", "vue", "vite", "flask", "fastapi", "tailwindcss"],
+    "packages": [],
+    "packageManagers": ["npm", "pnpm", "yarn", "pip"]
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["console"],
+    "severity": "major"
+  },
+  "sources": {
+    "rateLimits": {
+      "github": {
+        "maxRequests": 60,
+        "windowMs": 3600000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 300000
+      },
+      "npm": {
+        "maxRequests": 100,
+        "windowMs": 60000,
+        "backoffMultiplier": 1.5,
+        "maxBackoffMs": 60000
+      }
+    }
+  },
+  "cache": {
+    "ttl": 3600000,
+    "maxSize": 1000,
+    "directory": ".cache/version-scrubbing"
+  },
+  "analysis": {
+    "defaultStrategy": "moderate",
+    "includePrerelease": false,
+    "securityOnly": false,
+    "breakingChangeThreshold": "minor"
+  },
+  "integration": {
+    "autoUpdateDocs": false,
+    "createPullRequests": false
+  }
+}

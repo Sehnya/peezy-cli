@@ -8,6 +8,9 @@ import {
 } from "./actions/install.js";
 import { initGit } from "./actions/git.js";
 import { log } from "./utils/logger.js";
+import { validateVersions } from "./utils/version-check.js";
+import { VersionMonitoringService } from "./plugins/version-scrubbing/services/version-monitoring.js";
+import { loadConfig } from "./plugins/version-scrubbing/config/plugin-config.js";
 import type { NewOptions, TemplateKey, PackageManager } from "./types.js";
 
 const program = new Command();
@@ -55,6 +58,21 @@ program
   .description("Create a new project from a template")
   .action(async (templateArg?: string, nameArg?: string, opts?: any) => {
     try {
+      // Validate version requirements
+      const versionCheck = validateVersions(templateArg);
+
+      // Show errors and exit if critical issues
+      if (!versionCheck.valid) {
+        versionCheck.errors.forEach((error) => log.err(error));
+        process.exit(1);
+      }
+
+      // Show warnings but continue
+      if (versionCheck.warnings.length > 0) {
+        versionCheck.warnings.forEach((warning) => log.warn(warning));
+        console.log(); // Add spacing
+      }
+
       // Get ordered templates for prompts
       const orderedTemplates = getOrderedTemplates();
 
@@ -161,6 +179,15 @@ program
           "Template and name are required. Try `peezy new` and follow the prompts."
         );
         process.exit(1);
+      }
+
+      // Re-validate versions now that we know the template
+      if (!templateArg) {
+        const templateVersionCheck = validateVersions(config.template);
+        if (templateVersionCheck.warnings.length > 0) {
+          templateVersionCheck.warnings.forEach((warning) => log.warn(warning));
+          console.log(); // Add spacing
+        }
       }
 
       // Validate project name (same validation as in prompts)
@@ -273,6 +300,123 @@ program
     } catch (error) {
       log.err(
         `Failed to create project: ${error instanceof Error ? error.message : String(error)}`
+      );
+      process.exit(1);
+    }
+  });
+
+/**
+ * Version checking command
+ */
+program
+  .command("doctor")
+  .description("Environment & project health checks")
+  .option("--fix-lint", "Attempt to autofix lint issues", false)
+  .option("--fix-env-examples", "Autofix .env.example issues", false)
+  .option("--ports <ports>", "Comma-separated list of ports to check", "3000,5173,8000")
+  .action(async (options) => {
+    const { doctor } = await import("./commands/doctor.js");
+    const ports = String(options.ports)
+      .split(",")
+      .map((s: string) => parseInt(s.trim(), 10))
+      .filter((n: number) => !Number.isNaN(n));
+    const code = await doctor({
+      fixLint: !!options.fixLint,
+      fixEnvExamples: !!options.fixEnvExamples,
+      ports,
+    });
+    process.exit(code);
+  });
+
+program
+  .command("env")
+  .description("Typed env management: check, diff, generate, pull:railway, push:railway")
+  .argument("<subcommand>")
+  .option("--schema <path>", "Path to env schema JSON (required/optional keys)")
+  .action(async (subcommand: string, options) => {
+    const { runEnv } = await import("./commands/env.js");
+    await runEnv(subcommand as any, { schema: options.schema });
+  });
+
+program
+  .command("readme")
+  .description("Generate README and/or CHANGELOG with badges")
+  .option("--name <name>")
+  .option("--no-badges")
+  .option("--changelog", "Also generate CHANGELOG.md", false)
+  .action(async (options) => {
+    const { generateReadme, generateChangelog } = await import("./commands/readme-changelog.js");
+    await generateReadme({ name: options.name, badges: options.badges });
+    if (options.changelog) await generateChangelog();
+  });
+
+program
+  .command("upgrade")
+  .description("Check for updates to templates/plugins and preview diffs")
+  .option("--dry-run", "Preview changes only", false)
+  .action(async (options) => {
+    const { upgrade } = await import("./commands/upgrade.js");
+    await upgrade({ dryRun: !!options.dryRun });
+  });
+
+program
+  .command("check-versions")
+  .description(
+    "Check for latest versions of runtimes, frameworks, and dependencies"
+  )
+  .option(
+    "-f, --format <format>",
+    "Output format (json, markdown, console)",
+    "console"
+  )
+  .option(
+    "-t, --technologies <technologies>",
+    "Comma-separated list of technologies to check"
+  )
+  .option("--include-prerelease", "Include prerelease versions", false)
+  .option("--security-only", "Only show security-related updates", false)
+  .action(async (options) => {
+    try {
+      const config = loadConfig();
+      const versionService = new VersionMonitoringService(config);
+
+      const technologies = options.technologies
+        ? options.technologies.split(",").map((t: string) => t.trim())
+        : undefined;
+
+      if (options.securityOnly) {
+        const advisories = await versionService.getSecurityAdvisories(
+          technologies || config.monitoring.runtimes,
+          "medium"
+        );
+
+        if (options.format === "json") {
+          console.log(JSON.stringify(advisories, null, 2));
+        } else {
+          console.log("🔒 Security Advisories");
+          console.log("=".repeat(30));
+
+          for (const [tech, techAdvisories] of Object.entries(advisories)) {
+            if (techAdvisories.length > 0) {
+              console.log(`\n${tech}:`);
+              techAdvisories.forEach((advisory) => {
+                console.log(
+                  `  ⚠️  ${advisory.severity.toUpperCase()}: ${advisory.description}`
+                );
+              });
+            }
+          }
+        }
+      } else {
+        const report = await versionService.generateReport(
+          options.format as "json" | "markdown" | "console",
+          true
+        );
+        console.log(report);
+      }
+    } catch (error) {
+      log.err(
+        `Failed to check versions: ${error instanceof Error ? error.message : String(error)}`
       );
       process.exit(1);
     }

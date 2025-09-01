@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "version-scrubbing-plugin": {
+      "command": "node",
+      "args": ["./dist/plugins/version-scrubbing/index.js"],
+      "env": {
+        "LOG_LEVEL": "INFO",
+        "VS_SCHEDULE_FREQUENCY": "weekly"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "check_versions",
+        "get_security_advisories",
+        "generate_report"
+      ]
+    }
+  }
+}

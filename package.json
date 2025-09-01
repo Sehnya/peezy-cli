@@ -7,7 +7,7 @@
     "peezy": "bin/peezy.mjs"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -48,7 +48,8 @@
   "homepage": "https://github.com/Sehnya/peezy-cli#readme",
   "dependencies": {
     "commander": "^12.1.0",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "@modelcontextprotocol/sdk": "^0.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",

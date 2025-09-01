@@ -23,7 +23,7 @@ A full-stack application with Flask backend and React frontend built with Bun.
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - Bun (latest version)
 
 ### Backend Setup

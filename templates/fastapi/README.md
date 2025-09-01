@@ -15,7 +15,7 @@ A modern FastAPI application with automatic API documentation and high performan
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip (Python package installer)
 
 ### Installation
