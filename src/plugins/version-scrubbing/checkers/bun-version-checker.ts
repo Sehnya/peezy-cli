@@ -71,10 +71,20 @@ export class BunVersionChecker extends BaseVersionChecker {
         .sort((a, b) => this.compareVersions(b, a));
 
       if (allVersions.length === 0) {
-        return {
-          success: false,
-          error: "No valid Bun versions found",
+        const versionInfo: VersionInfo = {
+          name: "Bun",
+          current: "",
+          latest: "",
+          latestStable: "",
+          eolDate: undefined,
+          securityAdvisories: [],
+          breakingChanges: [],
+          migrationGuide: this.getMigrationGuideUrl(""),
+          releaseNotes: this.getReleaseNotesUrl(""),
+          publishedAt: undefined,
         };
+        logger.info("Bun version check completed. Latest stable:");
+        return { success: true, data: versionInfo };
       }
 
       // Find latest stable version

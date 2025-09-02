@@ -106,7 +106,23 @@ describe("Documentation Validation", () => {
     });
 
     test("all CLI examples should use valid flags", () => {
-      const validFlags = ["--pm", "--no-install", "--no-git"];
+      const validFlags = [
+        "--pm",
+        "--no-install",
+        "--no-git",
+        "--ports",
+        "--fix-lint",
+        "--fix-env-examples",
+        "--name",
+        "--changelog",
+        "--dry-run",
+        "--format",
+        "--technologies",
+        "--include-prerelease",
+        "--security-only",
+        "--no-badges",
+        "--schema",
+      ];
       const flagMatches = readmeContent.match(/--[\w-]+/g);
 
       if (flagMatches) {

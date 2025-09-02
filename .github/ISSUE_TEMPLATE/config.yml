@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Discussion
+    url: https://github.com/Sehnya/peezy-cli/discussions
+    about: Ask questions, share ideas, or discuss the project
+  - name: 📖 Documentation
+    url: https://github.com/Sehnya/peezy-cli#readme
+    about: Read the documentation and usage guides
+  - name: 🚀 Feature Roadmap
+    url: https://github.com/users/Sehnya/projects/1
+    about: View the project roadmap and planned features
+  - name: 🔒 Security Issues
+    url: https://github.com/Sehnya/peezy-cli/security/advisories/new
+    about: Report security vulnerabilities privately

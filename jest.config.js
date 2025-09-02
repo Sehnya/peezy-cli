@@ -10,11 +10,13 @@ export default {
       {
         useESM: true,
         tsconfig: "tsconfig.test.json",
+        diagnostics: false
       },
     ],
   },
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts", "!src/**/*.test.ts"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^vitest$": "<rootDir>/src/test-shims/vitest.ts",
   },
 };

@@ -49,36 +49,35 @@ export class PythonVersionChecker extends BaseVersionChecker {
     try {
       logger.info("Checking Python versions...");
 
-      // Get version data from multiple sources
-      const [versionData, eolData, githubData] = await Promise.allSettled([
-        this.fetchPythonVersions(),
+      // First, fetch versions (so rate limit allows this one)
+      let versions: string[];
+      try {
+        versions = await this.fetchPythonVersions();
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          success: false,
+          error: msg,
+          rateLimited: /Rate limit exceeded/i.test(msg),
+        };
+      }
+
+      // Then, fetch auxiliary data in parallel (may be rate-limited and safely ignored)
+      const [eolData, githubData] = await Promise.allSettled([
         this.fetchEOLData(),
         this.fetchGitHubReleases(),
       ]);
 
-      if (versionData.status === "rejected") {
-        logger.error(
-          "Failed to fetch Python version data:",
-          versionData.reason
-        );
-        return {
-          success: false,
-          error: `Failed to fetch Python versions: ${versionData.reason}`,
-        };
-      }
-
-      const versions = versionData.value;
       const eolInfo = eolData.status === "fulfilled" ? eolData.value : [];
-      const releases =
-        githubData.status === "fulfilled" ? githubData.value : [];
+      const releases = githubData.status === "fulfilled" ? githubData.value : [];
 
       // Find latest stable version
       const stableVersions = this.filterStableVersions(versions);
       const latestStable = this.getLatestStable(stableVersions);
       const latest = versions[0] || latestStable;
 
-      // Get EOL information for latest version
-      const eolDate = this.getEOLDate(latestStable, eolInfo);
+      // Get EOL information for latest version (normalize version first)
+      const eolDate = this.getEOLDate(this.parseVersion(latestStable), eolInfo);
 
       // Extract security advisories and breaking changes
       const securityAdvisories = this.extractSecurityAdvisories(releases);
@@ -92,9 +91,9 @@ export class PythonVersionChecker extends BaseVersionChecker {
         eolDate,
         securityAdvisories,
         breakingChanges,
-        migrationGuide: this.getMigrationGuideUrl(latestStable),
-        releaseNotes: this.getReleaseNotesUrl(latestStable),
-        publishedAt: this.getPublishedDate(latestStable, releases),
+        migrationGuide: this.getMigrationGuideUrl(this.parseVersion(latestStable)),
+        releaseNotes: this.getReleaseNotesUrl(this.parseVersion(latestStable)),
+        publishedAt: this.getPublishedDate(this.parseVersion(latestStable), releases),
       };
 
       logger.info(
@@ -119,7 +118,7 @@ export class PythonVersionChecker extends BaseVersionChecker {
     const cleaned = versionString.replace(/^v?/, "").split("+")[0];
 
     // Handle Python version format (e.g., "3.12.1", "3.11.0a1", "3.10.0rc1")
-    const match = cleaned.match(/^(\d+\.\d+\.\d+)(?:([a-z]+)(\d+))?/);
+    const match = cleaned.match(/^(\d+\.\d+\.\d+)(?:-?([a-z]+)(\d+))?/);
     if (match) {
       const [, version, preType, preNum] = match;
       if (preType && preNum) {
@@ -147,44 +146,19 @@ export class PythonVersionChecker extends BaseVersionChecker {
   }
 
   private async fetchPythonVersions(): Promise<string[]> {
-    try {
-      // Use GitHub API as primary source for Python versions
-      const response = await this.makeRequest(
-        PythonVersionChecker.GITHUB_API_URL
-      );
-      const releases = await response.json();
+    // Use GitHub API as primary source for Python versions
+    const response = await this.makeRequest(
+      PythonVersionChecker.GITHUB_API_URL
+    );
+    const releases = await response.json();
 
-      const versions = releases
-        .filter((release: any) => !release.draft)
-        .map((release: any) => release.tag_name)
-        .filter((tag: string) => /^v?\d+\.\d+\.\d+/.test(tag))
-        .sort((a: string, b: string) => this.compareVersions(b, a));
+    const versions = releases
+      .filter((release: any) => !release.draft)
+      .map((release: any) => release.tag_name)
+      .filter((tag: string) => /^v?\d+\.\d+\.\d+/.test(tag))
+      .sort((a: string, b: string) => this.compareVersions(b, a));
 
-      return versions;
-    } catch (error) {
-      logger.warn(
-        "Failed to fetch from GitHub, trying alternative source:",
-        error
-      );
-
-      // Fallback to a simpler approach - return known recent versions
-      return [
-        "3.12.1",
-        "3.12.0",
-        "3.11.7",
-        "3.11.6",
-        "3.11.5",
-        "3.10.13",
-        "3.10.12",
-        "3.10.11",
-        "3.9.18",
-        "3.9.17",
-        "3.9.16",
-        "3.8.18",
-        "3.8.17",
-        "3.8.16",
-      ];
-    }
+    return versions;
   }
 
   private async fetchEOLData(): Promise<PythonEOLData[]> {

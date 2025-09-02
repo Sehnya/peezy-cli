@@ -1,9 +1,4 @@
-export type TemplateKey =
-  | "bun-react-tailwind"
-  | "vite-vue-tailwind"
-  | "flask"
-  | "fastapi"
-  | "flask-bun-hybrid";
+export type TemplateKey = string;
 
 export type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
 

@@ -1,0 +1,145 @@
+name: 🔄 Version Update
+description: Report outdated dependencies or runtime versions
+title: "[Version]: "
+labels: ["version-update", "maintenance", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report outdated versions in templates, dependencies, or documentation. This helps keep Peezy CLI current with the latest stable releases.
+
+  - type: dropdown
+    id: update-type
+    attributes:
+      label: Update Type
+      description: What type of version update is needed?
+      options:
+        - Runtime Version (Node.js, Python, Bun)
+        - Framework Version (React, Vue, Flask, etc.)
+        - Package Manager (npm, pnpm, yarn, pip)
+        - Template Dependencies
+        - CLI Dependencies
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: component
+    attributes:
+      label: Component/Package Name
+      description: What specific component needs updating?
+      placeholder: e.g., "React", "Node.js", "tailwindcss", "vite"
+    validations:
+      required: true
+
+  - type: input
+    id: current-version
+    attributes:
+      label: Current Version
+      description: What version is currently being used?
+      placeholder: e.g., "18.2.0", "3.4.1", "20.10.0"
+    validations:
+      required: true
+
+  - type: input
+    id: target-version
+    attributes:
+      label: Target Version
+      description: What version should we update to?
+      placeholder: e.g., "18.2.7", "3.4.4", "20.11.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: update-priority
+    attributes:
+      label: Update Priority
+      description: How urgent is this update?
+      options:
+        - Low - Minor version bump, no breaking changes
+        - Medium - Feature update with new capabilities
+        - High - Security fix or important bug fix
+        - Critical - Security vulnerability or breaking issue
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: affected-areas
+    attributes:
+      label: Affected Areas
+      description: Which parts of Peezy CLI are affected by this update?
+      options:
+        - label: CLI core functionality
+        - label: React templates
+        - label: Vue templates
+        - label: Flask templates
+        - label: FastAPI templates
+        - label: Vite configuration
+        - label: Tailwind CSS setup
+        - label: TypeScript configuration
+        - label: Testing setup
+        - label: Build process
+        - label: Documentation
+        - label: CI/CD workflows
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes
+      description: Are there any breaking changes in the target version?
+      placeholder: |
+        List any breaking changes that need to be addressed:
+        - API changes
+        - Configuration changes
+        - Deprecated features
+        - Migration requirements
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Update Benefits
+      description: What benefits does this update provide?
+      placeholder: |
+        - Performance improvements
+        - New features
+        - Security fixes
+        - Bug fixes
+        - Better compatibility
+
+  - type: textarea
+    id: testing-notes
+    attributes:
+      label: Testing Requirements
+      description: What should be tested after this update?
+      placeholder: |
+        - Template generation
+        - Build processes
+        - Runtime compatibility
+        - Specific features
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Provide links to release notes, changelogs, or security advisories
+      placeholder: |
+        - Release notes: https://...
+        - Changelog: https://...
+        - Security advisory: https://...
+        - Migration guide: https://...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have verified the target version is stable and released
+          required: true
+        - label: I have checked for breaking changes in the target version
+          required: true
+        - label: I have provided relevant documentation links
+          required: true

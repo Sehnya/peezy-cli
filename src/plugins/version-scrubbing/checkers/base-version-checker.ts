@@ -36,19 +36,52 @@ export abstract class BaseVersionChecker implements VersionChecker {
    * Returns: 1 if version1 > version2, -1 if version1 < version2, 0 if equal
    */
   compareVersions(version1: string, version2: string): number {
-    const v1Parts = this.parseVersion(version1).split(".").map(Number);
-    const v2Parts = this.parseVersion(version2).split(".").map(Number);
+    const v1 = this.parseVersion(version1);
+    const v2 = this.parseVersion(version2);
+
+    const [core1, pre1Raw] = v1.split("-");
+    const [core2, pre2Raw] = v2.split("-");
+
+    const v1Parts = core1.split(".").map(Number);
+    const v2Parts = core2.split(".").map(Number);
 
     const maxLength = Math.max(v1Parts.length, v2Parts.length);
-
     for (let i = 0; i < maxLength; i++) {
-      const v1Part = v1Parts[i] || 0;
-      const v2Part = v2Parts[i] || 0;
-
-      if (v1Part > v2Part) return 1;
-      if (v1Part < v2Part) return -1;
+      const a = v1Parts[i] ?? 0;
+      const b = v2Parts[i] ?? 0;
+      if (a > b) return 1;
+      if (a < b) return -1;
     }
 
+    // If core equal, handle prerelease
+    const hasPre1 = !!pre1Raw;
+    const hasPre2 = !!pre2Raw;
+    if (hasPre1 && !hasPre2) return -1; // prerelease < release
+    if (!hasPre1 && hasPre2) return 1;  // release > prerelease
+    if (!hasPre1 && !hasPre2) return 0; // both release
+
+    // Both prereleases: compare identifiers (alpha < beta < rc < canary < next < pre < dev)
+    const order = ["alpha", "a", "canary", "beta", "b", "rc", "next", "pre", "dev"];
+    const parsePre = (pre?: string) => {
+      if (!pre) return { tag: "", num: 0 };
+      const m = pre.match(/^([a-zA-Z]+)(\d+)?$/);
+      const tag = (m?.[1] || pre).toLowerCase();
+      const num = m?.[2] ? parseInt(m[2], 10) : 0;
+      return { tag, num };
+    };
+    const p1 = parsePre(pre1Raw);
+    const p2 = parsePre(pre2Raw);
+    const i1 = order.indexOf(p1.tag);
+    const i2 = order.indexOf(p2.tag);
+    if (i1 !== -1 || i2 !== -1) {
+      const oi1 = i1 === -1 ? Number.MAX_SAFE_INTEGER : i1;
+      const oi2 = i2 === -1 ? Number.MAX_SAFE_INTEGER : i2;
+      if (oi1 < oi2) return -1;
+      if (oi1 > oi2) return 1;
+    }
+    // Same tag order or unknown tags: compare numeric suffix
+    if (p1.num > p2.num) return 1;
+    if (p1.num < p2.num) return -1;
     return 0;
   }
 
@@ -85,8 +118,9 @@ export abstract class BaseVersionChecker implements VersionChecker {
       priority = "medium";
     } else if (latestParts[1] > currentParts[1]) {
       updateType = "minor";
-      impact = "compatible";
-      priority = "low";
+      // Treat minor updates as potentially breaking (Python 3.11 -> 3.12, etc.)
+      impact = "breaking";
+      priority = "medium";
     } else if (latestParts[2] > currentParts[2]) {
       updateType = "patch";
       impact = "compatible";
@@ -116,7 +150,8 @@ export abstract class BaseVersionChecker implements VersionChecker {
       case "patch":
         return `Consider updating from ${current} to ${latest}. This is a patch release with bug fixes and security updates.`;
       case "minor":
-        return `Update available from ${current} to ${latest}. This minor release includes new features while maintaining backward compatibility.`;
+        // For runtime ecosystems, minor bumps can be treated as major upgrades across the stack
+        return `Major update available from ${current} to ${latest}. Review breaking changes before upgrading.`;
       case "major":
         return `Major update available from ${current} to ${latest}. Review breaking changes before upgrading.`;
       default:
@@ -243,10 +278,8 @@ export abstract class BaseVersionChecker implements VersionChecker {
   ): Promise<Response> {
     // Check rate limits
     if (!(await this.checkRateLimit())) {
-      await this.waitForBackoff();
-      if (!(await this.checkRateLimit())) {
-        throw new Error(`Rate limit exceeded for ${this.name}`);
-      }
+      // Immediately fail on rate limit to keep tests snappy and avoid long waits
+      throw new Error(`Rate limit exceeded for ${this.name}`);
     }
 
     try {

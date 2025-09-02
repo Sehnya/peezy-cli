@@ -1,0 +1,168 @@
+name: 📋 Template Request
+description: Request a new project template
+title: "[Template]: "
+labels: ["template", "enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request a new project template for Peezy CLI! This helps us understand what frameworks and configurations the community needs.
+
+  - type: input
+    id: template-name
+    attributes:
+      label: Template Name
+      description: What should this template be called?
+      placeholder: e.g., "Next.js + Tailwind + TypeScript"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Primary Framework
+      description: What's the main framework for this template?
+      options:
+        - React
+        - Vue
+        - Angular
+        - Svelte
+        - Next.js
+        - Nuxt.js
+        - Flask
+        - FastAPI
+        - Django
+        - Express.js
+        - Nest.js
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime Environment
+      description: What runtime should this template use?
+      options:
+        - Node.js
+        - Bun
+        - Python
+        - Deno
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Desired Features
+      description: What features should be included in this template?
+      options:
+        - label: TypeScript support
+        - label: Tailwind CSS
+        - label: ESLint configuration
+        - label: Prettier configuration
+        - label: Testing setup (Jest/Vitest)
+        - label: Authentication system
+        - label: Database integration
+        - label: API routes/endpoints
+        - label: Docker configuration
+        - label: CI/CD setup
+        - label: PWA support
+        - label: Internationalization (i18n)
+        - label: State management (Redux/Pinia/etc.)
+        - label: Form validation
+        - label: File upload handling
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Template Description
+      description: Describe what this template should include and its intended use case.
+      placeholder: |
+        This template should provide...
+        It would be useful for...
+        Key features include...
+    validations:
+      required: true
+
+  - type: textarea
+    id: structure
+    attributes:
+      label: Desired Project Structure
+      description: What should the generated project structure look like?
+      render: text
+      placeholder: |
+        my-app/
+        ├── src/
+        │   ├── components/
+        │   ├── pages/
+        │   └── utils/
+        ├── public/
+        ├── tests/
+        ├── package.json
+        └── README.md
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Key Dependencies
+      description: What are the main packages/dependencies this template should include?
+      placeholder: |
+        - react@^18.0.0
+        - typescript@^5.0.0
+        - tailwindcss@^3.0.0
+        - @types/node@^20.0.0
+
+  - type: textarea
+    id: scripts
+    attributes:
+      label: Package Scripts
+      description: What npm/package scripts should be included?
+      render: json
+      placeholder: |
+        {
+          "dev": "vite",
+          "build": "vite build",
+          "test": "vitest",
+          "lint": "eslint src/"
+        }
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this template to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would be useful
+        - High - Frequently needed
+        - Critical - Essential for my workflow
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Similar Examples
+      description: Are there existing templates or boilerplates that are similar to what you're requesting?
+      placeholder: |
+        - create-react-app
+        - Vite React template
+        - T3 Stack
+        - etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing templates to ensure this is not a duplicate
+          required: true
+        - label: I have provided a clear description of the template's purpose
+          required: true
+        - label: This template would benefit the broader developer community
+          required: true
