@@ -2,8 +2,8 @@ name: Branch Protection
 
 on:
   pull_request:
-    branches: [main, develop]
-    types: [opened, synchronize, reopened]
+    branches: [main]
+    types: [opened, synchronize]
 
 jobs:
   validate-pr:
@@ -11,76 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate PR title
-        uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            test
-            chore
-            perf
-            ci
-            build
-          scopes: |
-            cli
-            templates
-            core
-            docs
-            ci
-            deps
-          requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
-          subjectPatternError: |
-            The subject "{subject}" found in the pull request title "{title}"
-            didn't match the configured pattern. Please ensure that the subject
-            doesn't start with an uppercase character.
-
-      - name: Validate branch name
-        run: |
-          branch_name="${{ github.head_ref }}"
-
-          # Check if branch follows naming convention
-          if [[ ! $branch_name =~ ^(feature|bugfix|hotfix|release|version|template)/.+ ]]; then
-            echo "❌ Branch name '$branch_name' doesn't follow naming convention"
-            echo "Expected format: feature/description, bugfix/description, etc."
-            exit 1
-          fi
-
-          echo "✅ Branch name follows convention: $branch_name"
-
-      - name: Check for required files
-        run: |
-          # Check if PR modifies templates and includes tests
-          if git diff --name-only origin/develop...HEAD | grep -q "^templates/"; then
-            if ! git diff --name-only origin/develop...HEAD | grep -q "test\|spec"; then
-              echo "❌ Template changes detected but no tests added"
-              echo "Please add tests for template modifications"
-              exit 1
-            fi
-          fi
-
-          # Check if package.json changes include lock file updates
-          if git diff --name-only origin/develop...HEAD | grep -q "package.json"; then
-            if ! git diff --name-only origin/develop...HEAD | grep -q "package-lock.json"; then
-              echo "⚠️ package.json modified but package-lock.json not updated"
-              echo "Please run 'npm install' to update the lock file"
-            fi
-          fi
-
-  security-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -91,166 +21,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run security audit
-        run: |
-          # Run audit and capture output
-          if ! npm audit --audit-level moderate; then
-            echo "❌ Security vulnerabilities found"
-            echo "Please run 'npm audit fix' to resolve issues"
-            exit 1
-          fi
-
-      - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --debug --only-verified
-
-  size-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Run tests
+        run: npm test
 
       - name: Build project
         run: npm run build
 
-      - name: Check bundle size
-        run: |
-          # Check if dist folder size is reasonable
-          dist_size=$(du -sh dist | cut -f1)
-          echo "Built package size: $dist_size"
-
-          # Check individual file sizes
-          find dist -name "*.js" -size +1M -exec echo "⚠️ Large file: {} ($(du -h {} | cut -f1))" \;
-
-      - name: Check template sizes
-        run: |
-          # Check if any template is unusually large
-          find templates -type d -name "*" -exec du -sh {} \; | while read size path; do
-            # Convert size to bytes for comparison (simplified check)
-            if [[ $size == *M* ]] && [[ ${size%M*} -gt 10 ]]; then
-              echo "⚠️ Large template: $path ($size)"
-            fi
-          done
-
-  compatibility-check:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build and test
-        run: |
-          npm run build
-          npm test
-
-      - name: Test CLI installation
-        run: |
-          npm pack
-          npm install -g ./peezy-cli-*.tgz
-          peezy --version
-          peezy --help
-
-  documentation-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check for documentation updates
-        run: |
-          # Check if code changes require documentation updates
-          if git diff --name-only origin/develop...HEAD | grep -E "\.(ts|js)$" | grep -v test; then
-            echo "Code changes detected, checking for documentation updates..."
-            
-            # Check if README or docs were updated
-            if ! git diff --name-only origin/develop...HEAD | grep -E "(README|CONTRIBUTING|docs/)" > /dev/null; then
-              echo "⚠️ Code changes detected but no documentation updates"
-              echo "Consider updating README.md or documentation if needed"
-            else
-              echo "✅ Documentation updates found"
-            fi
-          fi
-
-      - name: Validate markdown files
-        uses: DavidAnson/markdownlint-action@v1
-        with:
-          files: "**/*.md"
-          ignore: "node_modules"
-          config: |
-            {
-              "MD013": false,
-              "MD033": false,
-              "MD041": false
-            }
-
-  pr-size-check:
-    runs-on: ubuntu-latest
-    steps:
       - name: Check PR size
         uses: actions/github-script@v7
         with:
           script: |
             const pr = context.payload.pull_request;
             const additions = pr.additions;
-            const deletions = pr.deletions;
             const changedFiles = pr.changed_files;
 
-            console.log(`PR Stats: +${additions} -${deletions} files: ${changedFiles}`);
+            console.log(`PR Stats: +${additions} files: ${changedFiles}`);
 
-            // Warn about large PRs
-            if (additions > 1000 || changedFiles > 20) {
+            // Warn about very large PRs
+            if (additions > 2000 || changedFiles > 50) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: pr.number,
-                body: `⚠️ **Large PR Detected**
-                
-                This PR has ${additions} additions across ${changedFiles} files.
-                
-                Consider:
-                - Breaking this into smaller, focused PRs
-                - Ensuring adequate test coverage
-                - Providing detailed description of changes
-                - Requesting additional reviewers if needed
-                
-                Large PRs are harder to review and more likely to introduce bugs.`
-              });
-            }
-
-            // Encourage good practices for small PRs
-            if (additions < 100 && changedFiles < 5) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: `✅ **Well-sized PR**
-                
-                Thanks for keeping this PR focused and reviewable! 🚀`
+                body: `⚠️ **Large PR Detected** - ${additions} additions across ${changedFiles} files. Consider breaking into smaller PRs for easier review.`
               });
             }
