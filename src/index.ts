@@ -17,7 +17,8 @@ const program = new Command();
 
 program
   .name("peezy")
-  .description("Initialize projects across runtimes — instantly")
+  .description("🚀 Initialize projects across runtimes — instantly")
+  .version("0.1.3")
   .version("0.1.0");
 
 /**
@@ -313,7 +314,11 @@ program
   .description("Environment & project health checks")
   .option("--fix-lint", "Attempt to autofix lint issues", false)
   .option("--fix-env-examples", "Autofix .env.example issues", false)
-  .option("--ports <ports>", "Comma-separated list of ports to check", "3000,5173,8000")
+  .option(
+    "--ports <ports>",
+    "Comma-separated list of ports to check",
+    "3000,5173,8000"
+  )
   .action(async (options) => {
     const { doctor } = await import("./commands/doctor.js");
     const ports = String(options.ports)
@@ -330,7 +335,9 @@ program
 
 program
   .command("env")
-  .description("Typed env management: check, diff, generate, pull:railway, push:railway")
+  .description(
+    "Typed env management: check, diff, generate, pull:railway, push:railway"
+  )
   .argument("<subcommand>")
   .option("--schema <path>", "Path to env schema JSON (required/optional keys)")
   .action(async (subcommand: string, options) => {
@@ -345,7 +352,9 @@ program
   .option("--no-badges")
   .option("--changelog", "Also generate CHANGELOG.md", false)
   .action(async (options) => {
-    const { generateReadme, generateChangelog } = await import("./commands/readme-changelog.js");
+    const { generateReadme, generateChangelog } = await import(
+      "./commands/readme-changelog.js"
+    );
     await generateReadme({ name: options.name, badges: options.badges });
     if (options.changelog) await generateChangelog();
   });

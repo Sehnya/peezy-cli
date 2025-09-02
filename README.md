@@ -22,7 +22,14 @@ A cross-runtime terminal tool that scaffolds opinionated starter applications fo
 ## Installation
 
 ```bash
+# Install globally via npm
 npm install -g peezy-cli
+
+# Or use with npx (no installation required)
+npx peezy-cli new
+
+# Verify installation
+peezy --version
 ```
 
 ## Usage
@@ -167,19 +174,24 @@ Add a `peezy.config.js` to extend prompts or run hooks after scaffold:
 export default {
   plugins: [
     {
-      name: 'example-plugin',
+      name: "example-plugin",
       extendPrompts(questions) {
         return [
           ...questions,
-          { type: 'toggle', name: 'ci', message: 'Add CI config?', initial: true }
+          {
+            type: "toggle",
+            name: "ci",
+            message: "Add CI config?",
+            initial: true,
+          },
         ];
       },
       async onAfterScaffold({ projectPath, options }) {
         // e.g., write CI files based on options.ci
-      }
-    }
-  ]
-}
+      },
+    },
+  ],
+};
 ```
 
 Note: Plugin support is experimental and API may change.
@@ -241,7 +253,7 @@ MIT © [Sehnya](https://github.com/Sehnya)
 - Add check-versions command with security advisory mode
 - Add doctor command with ports/env/ts checks and options
 - Add README/CHANGELOG generator command
-- Introduce experimental plugin system (peezy.config.*)
+- Introduce experimental plugin system (peezy.config.\*)
 - Improve interactive prompts and template highlighting
 
 ### 0.1.0
