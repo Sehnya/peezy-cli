@@ -26,23 +26,69 @@ program
 program
   .command("list")
   .description("List available templates")
-  .action(() => {
-    log.info("Available templates:");
-    console.log();
+  .option("--remote", "Include remote templates", false)
+  .action(async (options) => {
+    try {
+      if (options.remote) {
+        const { getAllTemplates } = await import("./registry.js");
+        const { local, remote } = await getAllTemplates();
 
-    const orderedTemplates = getOrderedTemplates();
+        log.info("Local templates:");
+        console.log();
 
-    orderedTemplates.forEach((key) => {
-      const template = registry[key];
-      const indicator = template.popular ? log.popular("") : "  ";
-      const title = template.popular
-        ? log.highlight(template.title)
-        : template.title;
-      console.log(`${indicator}${key.padEnd(20)} ${title}`);
-    });
+        local.forEach((key) => {
+          const template = registry[key];
+          const indicator = template.popular ? log.popular("") : "  ";
+          const title = template.popular
+            ? log.highlight(template.title)
+            : template.title;
+          console.log(`${indicator}${key.padEnd(20)} ${title}`);
+        });
 
-    console.log();
-    log.info("Popular templates are marked with ⭐");
+        if (remote.length > 0) {
+          console.log();
+          log.info("Remote templates:");
+          console.log();
+
+          remote.forEach((template) => {
+            const tags =
+              template.versions[template.latest]?.tags?.join(", ") || "";
+            console.log(
+              `  ${template.name.padEnd(30)} ${template.latest.padEnd(10)} ${tags}`
+            );
+          });
+        }
+
+        console.log();
+        log.info("Popular templates are marked with ⭐");
+        log.info(
+          "Use 'peezy add @org/template@version' to cache remote templates"
+        );
+      } else {
+        log.info("Available templates:");
+        console.log();
+
+        const orderedTemplates = getOrderedTemplates();
+
+        orderedTemplates.forEach((key) => {
+          const template = registry[key];
+          const indicator = template.popular ? log.popular("") : "  ";
+          const title = template.popular
+            ? log.highlight(template.title)
+            : template.title;
+          console.log(`${indicator}${key.padEnd(20)} ${title}`);
+        });
+
+        console.log();
+        log.info("Popular templates are marked with ⭐");
+        log.info("Use --remote to see remote templates");
+      }
+    } catch (error) {
+      log.err(
+        `Failed to list templates: ${error instanceof Error ? error.message : String(error)}`
+      );
+      process.exit(1);
+    }
   });
 
 /**
@@ -223,8 +269,12 @@ program
         }
       }
 
-      // Validate template
-      if (!isValidTemplate(config.template)) {
+      // Validate template (allow remote templates to pass through)
+      const { isRemoteTemplate } = await import("./registry.js");
+      if (
+        !isValidTemplate(config.template) &&
+        !isRemoteTemplate(config.template)
+      ) {
         log.err(`Unknown template: "${config.template}"`);
         console.log();
         log.info("Available templates:");
@@ -234,7 +284,10 @@ program
           console.log(`${indicator}${key} — ${template.title}`);
         });
         console.log();
-        log.info("Use `peezy list` to see all available templates");
+        log.info("Use `peezy list --remote` to see remote templates");
+        log.info(
+          "Use `peezy add @org/template@version` to add remote templates"
+        );
         process.exit(1);
       }
 
@@ -250,7 +303,7 @@ program
         `Scaffolding ${log.highlight(config.template)} → ${log.highlight(config.name)}`
       );
 
-      const projectPath = scaffold(config.template, config.name);
+      const projectPath = await scaffold(config.template, config.name);
       log.ok(`Files created in ./${config.name}`);
 
       // Install dependencies
@@ -313,7 +366,11 @@ program
   .description("Environment & project health checks")
   .option("--fix-lint", "Attempt to autofix lint issues", false)
   .option("--fix-env-examples", "Autofix .env.example issues", false)
-  .option("--ports <ports>", "Comma-separated list of ports to check", "3000,5173,8000")
+  .option(
+    "--ports <ports>",
+    "Comma-separated list of ports to check",
+    "3000,5173,8000"
+  )
   .action(async (options) => {
     const { doctor } = await import("./commands/doctor.js");
     const ports = String(options.ports)
@@ -330,7 +387,9 @@ program
 
 program
   .command("env")
-  .description("Typed env management: check, diff, generate, pull:railway, push:railway")
+  .description(
+    "Typed env management: check, diff, generate, pull:railway, push:railway"
+  )
   .argument("<subcommand>")
   .option("--schema <path>", "Path to env schema JSON (required/optional keys)")
   .action(async (subcommand: string, options) => {
@@ -345,7 +404,9 @@ program
   .option("--no-badges")
   .option("--changelog", "Also generate CHANGELOG.md", false)
   .action(async (options) => {
-    const { generateReadme, generateChangelog } = await import("./commands/readme-changelog.js");
+    const { generateReadme, generateChangelog } = await import(
+      "./commands/readme-changelog.js"
+    );
     await generateReadme({ name: options.name, badges: options.badges });
     if (options.changelog) await generateChangelog();
   });
@@ -357,6 +418,63 @@ program
   .action(async (options) => {
     const { upgrade } = await import("./commands/upgrade.js");
     await upgrade({ dryRun: !!options.dryRun });
+  });
+
+/**
+ * Add command - add remote templates to cache
+ */
+program
+  .command("add")
+  .argument("<template>", "Template to add (@org/template@version)")
+  .option("--force", "Force re-download if already cached", false)
+  .option("--version <version>", "Specific version to download")
+  .description("Add a remote template to the local cache")
+  .action(async (templateName: string, options) => {
+    try {
+      const { addTemplate } = await import("./commands/add.js");
+      await addTemplate(templateName, {
+        force: options.force,
+        version: options.version,
+      });
+    } catch (error) {
+      log.err(
+        `Failed to add template: ${error instanceof Error ? error.message : String(error)}`
+      );
+      process.exit(1);
+    }
+  });
+
+/**
+ * Cache command - manage template cache
+ */
+program
+  .command("cache")
+  .description("Manage template cache")
+  .argument("[action]", "Action to perform (list, clear)", "list")
+  .action(async (action: string) => {
+    try {
+      const { listCachedTemplates, clearCache } = await import(
+        "./commands/add.js"
+      );
+
+      switch (action) {
+        case "list":
+          await listCachedTemplates();
+          break;
+        case "clear":
+          await clearCache();
+          break;
+        default:
+          log.err(`Unknown cache action: ${action}`);
+          log.info("Available actions: list, clear");
+          process.exit(1);
+      }
+    } catch (error) {
+      log.err(
+        `Cache operation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      process.exit(1);
+    }
   });
 
 program
