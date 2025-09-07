@@ -7,18 +7,31 @@ import {
   isDirectoryEmpty,
 } from "../utils/fsx.js";
 import { resolveTemplate } from "../registry.js";
-import type { TemplateKey } from "../types.js";
+import { createLockFile } from "../utils/lock-file.js";
+import type { TemplateKey, NewOptions } from "../types.js";
 
 /**
  * Scaffold a new project from a template (local or remote)
  * @param templateName - The template to use (supports @org/template@version format)
  * @param destName - The destination directory name
- * @returns The absolute path to the created project
+ * @param options - Scaffolding options
+ * @returns The absolute path to the created project and template info
  */
 export async function scaffold(
   templateName: string,
-  destName: string
-): Promise<string> {
+  destName: string,
+  options: NewOptions = {}
+): Promise<{
+  projectPath: string;
+  templateInfo: {
+    name: string;
+    version?: string;
+    isRemote: boolean;
+    resolvedUrl?: string;
+    integrity?: string;
+    path?: string;
+  };
+}> {
   // Resolve destination path
   const destPath = path.resolve(process.cwd(), destName);
 
@@ -38,11 +51,32 @@ export async function scaffold(
   }
 
   let templatePath: string;
+  let templateInfo: {
+    name: string;
+    version?: string;
+    isRemote: boolean;
+    resolvedUrl?: string;
+    integrity?: string;
+    path?: string;
+  };
 
   try {
     // Resolve template (local or remote)
     const resolved = await resolveTemplate(templateName);
     templatePath = resolved.path;
+
+    templateInfo = {
+      name: templateName,
+      version: resolved.version,
+      isRemote: resolved.isRemote,
+      path: resolved.isRemote ? undefined : templatePath,
+    };
+
+    // For remote templates, we need to get additional info
+    if (resolved.isRemote && resolved.templateInfo) {
+      templateInfo.resolvedUrl = resolved.templateInfo.resolvedUrl;
+      templateInfo.integrity = resolved.templateInfo.integrity;
+    }
   } catch (error) {
     throw new Error(
       `Failed to resolve template "${templateName}": ${error instanceof Error ? error.message : String(error)}`
@@ -66,7 +100,25 @@ export async function scaffold(
 
     replaceTokens(destPath, tokens);
 
-    return destPath;
+    // Create peezy.lock.json for deterministic builds
+    await createLockFile(
+      destPath,
+      templateInfo.name,
+      templateInfo.version || "latest",
+      options,
+      templateInfo.isRemote
+        ? {
+            type: "registry",
+            resolvedUrl: templateInfo.resolvedUrl,
+            integrity: templateInfo.integrity,
+          }
+        : {
+            type: "local",
+            path: templateInfo.path,
+          }
+    );
+
+    return { projectPath: destPath, templateInfo };
   } catch (error) {
     // Clean up on failure
     if (fs.existsSync(destPath)) {
