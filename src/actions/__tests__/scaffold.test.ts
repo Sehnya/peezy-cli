@@ -7,6 +7,7 @@ import * as fsx from "../../utils/fsx";
 jest.mock("node:fs");
 jest.mock("../../utils/fsx");
 jest.mock("../../registry", () => ({
+  resolveTemplate: jest.fn(),
   registry: {
     "bun-react-tailwind": {
       title: "Bun + React + Vite + Tailwind",
@@ -19,9 +20,19 @@ jest.mock("../../registry", () => ({
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockFsx = fsx as jest.Mocked<typeof fsx>;
 
+// Import the mocked registry
+const mockRegistry = require("../../registry");
+
 describe("scaffold", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock resolveTemplate to return a local path
+    mockRegistry.resolveTemplate.mockResolvedValue({
+      path: "/mock/templates/bun-react-tailwind",
+      isRemote: false,
+    });
+
     // Mock fs.existsSync to return true for template paths, false for destination
     mockFs.existsSync.mockImplementation((path) => {
       if (typeof path === "string" && path.includes("templates")) {
@@ -39,9 +50,12 @@ describe("scaffold", () => {
     );
   });
 
-  it("should scaffold a project successfully", () => {
-    const result = scaffold("bun-react-tailwind", "my-app");
+  it("should scaffold a project successfully", async () => {
+    const result = await scaffold("bun-react-tailwind", "my-app");
 
+    expect(mockRegistry.resolveTemplate).toHaveBeenCalledWith(
+      "bun-react-tailwind"
+    );
     expect(mockFsx.copyDir).toHaveBeenCalledWith(
       "/mock/templates/bun-react-tailwind",
       expect.stringContaining("my-app")
@@ -58,13 +72,17 @@ describe("scaffold", () => {
     expect(result).toContain("my-app");
   });
 
-  it("should throw error for unknown template", () => {
-    expect(() => scaffold("unknown-template" as any, "my-app")).toThrow(
-      "Unknown template: unknown-template"
+  it("should throw error for unknown template", async () => {
+    mockRegistry.resolveTemplate.mockRejectedValue(
+      new Error("Template not found")
+    );
+
+    await expect(scaffold("unknown-template" as any, "my-app")).rejects.toThrow(
+      "Failed to resolve template"
     );
   });
 
-  it("should throw error for non-empty destination", () => {
+  it("should throw error for non-empty destination", async () => {
     mockFs.existsSync.mockReturnValue(true); // Destination exists
     mockFs.statSync.mockReturnValue({
       isFile: () => false,
@@ -72,12 +90,12 @@ describe("scaffold", () => {
     } as any);
     mockFsx.isDirectoryEmpty.mockReturnValue(false); // Not empty
 
-    expect(() => scaffold("bun-react-tailwind", "existing-dir")).toThrow(
-      "already exists and is not empty"
-    );
+    await expect(
+      scaffold("bun-react-tailwind", "existing-dir")
+    ).rejects.toThrow("already exists and is not empty");
   });
 
-  it("should throw error for missing template directory", () => {
+  it("should throw error for missing template directory", async () => {
     mockFs.existsSync.mockImplementation((path) => {
       if (typeof path === "string" && path.includes("templates")) {
         return false;
@@ -85,12 +103,12 @@ describe("scaffold", () => {
       return true;
     });
 
-    expect(() => scaffold("bun-react-tailwind", "my-app")).toThrow(
+    await expect(scaffold("bun-react-tailwind", "my-app")).rejects.toThrow(
       "Template directory not found"
     );
   });
 
-  it("should clean up on failure", () => {
+  it("should clean up on failure", async () => {
     // Mock that destination gets created during copyDir, then copyDir fails
     mockFsx.copyDir.mockImplementation(() => {
       // Simulate that the directory was created
@@ -98,7 +116,7 @@ describe("scaffold", () => {
       throw new Error("Copy failed");
     });
 
-    expect(() => scaffold("bun-react-tailwind", "my-app")).toThrow(
+    await expect(scaffold("bun-react-tailwind", "my-app")).rejects.toThrow(
       "Copy failed"
     );
 

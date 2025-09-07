@@ -7,6 +7,7 @@ A cross-runtime terminal tool that scaffolds opinionated starter applications fo
 ## Features
 
 - 🚀 Zero-network scaffolding — all templates embedded, works offline
+- 🌐 **Remote templates** — versioned, cacheable templates from registries
 - 🎯 Interactive prompts — smart defaults with popular options highlighted
 - 📦 Multi-runtime support — Bun, Node.js, Python (Flask/FastAPI)
 - 🎨 Modern frameworks — React, Vue with Vite and Tailwind CSS
@@ -46,8 +47,17 @@ peezy new bun-react-tailwind my-app --pm npm --no-git
 # List all available templates
 peezy list
 
+# List remote templates too
+peezy list --remote
+
+# Add remote templates to cache
+peezy add @org/template@1.0.0
+
 # Create new project (interactive)
 peezy new
+
+# Use remote templates
+peezy new @org/template@1.0.0 my-app
 
 # Create with specific template
 peezy new <template> <name> [options]
@@ -81,19 +91,40 @@ peezy check-versions --format json --technologies node,bun,react --security-only
 
 ## Available Templates
 
-### Frontend Templates
+### Local Templates (Embedded)
+
+#### Frontend Templates
 
 - **bun-react-tailwind** ⭐ - Bun + React + Vite + Tailwind CSS
 - **vite-vue-tailwind** ⭐ - Vue + Vite + Tailwind CSS
 
-### Backend Templates
+#### Backend Templates
 
 - **flask** ⭐ - Python Flask API/App
 - **fastapi** - Python FastAPI with modern features
 
-### Full-Stack Templates
+#### Full-Stack Templates
 
 - **flask-bun-hybrid** - Flask backend + Bun frontend
+
+### Remote Templates
+
+Remote templates are fetched from registries and cached locally. They support versioning and scoped naming.
+
+```bash
+# Add and use remote templates
+peezy add @peezy/nextjs-prisma@2.1.0
+peezy new @peezy/nextjs-prisma my-app
+
+# List all available remote templates
+peezy list --remote
+
+# Manage template cache
+peezy cache list
+peezy cache clear
+```
+
+See [REMOTE_TEMPLATES.md](./REMOTE_TEMPLATES.md) for detailed documentation.
 
 ## Examples
 
@@ -167,19 +198,24 @@ Add a `peezy.config.js` to extend prompts or run hooks after scaffold:
 export default {
   plugins: [
     {
-      name: 'example-plugin',
+      name: "example-plugin",
       extendPrompts(questions) {
         return [
           ...questions,
-          { type: 'toggle', name: 'ci', message: 'Add CI config?', initial: true }
+          {
+            type: "toggle",
+            name: "ci",
+            message: "Add CI config?",
+            initial: true,
+          },
         ];
       },
       async onAfterScaffold({ projectPath, options }) {
         // e.g., write CI files based on options.ci
-      }
-    }
-  ]
-}
+      },
+    },
+  ],
+};
 ```
 
 Note: Plugin support is experimental and API may change.
@@ -241,7 +277,7 @@ MIT © [Sehnya](https://github.com/Sehnya)
 - Add check-versions command with security advisory mode
 - Add doctor command with ports/env/ts checks and options
 - Add README/CHANGELOG generator command
-- Introduce experimental plugin system (peezy.config.*)
+- Introduce experimental plugin system (peezy.config.\*)
 - Improve interactive prompts and template highlighting
 
 ### 0.1.0

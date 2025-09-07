@@ -6,22 +6,19 @@ import {
   sanitizePackageName,
   isDirectoryEmpty,
 } from "../utils/fsx.js";
-import { registry } from "../registry.js";
+import { resolveTemplate } from "../registry.js";
 import type { TemplateKey } from "../types.js";
 
 /**
- * Scaffold a new project from a template
- * @param templateKey - The template to use
+ * Scaffold a new project from a template (local or remote)
+ * @param templateName - The template to use (supports @org/template@version format)
  * @param destName - The destination directory name
  * @returns The absolute path to the created project
  */
-export function scaffold(templateKey: TemplateKey, destName: string): string {
-  const template = registry[templateKey];
-
-  if (!template) {
-    throw new Error(`Unknown template: ${templateKey}`);
-  }
-
+export async function scaffold(
+  templateName: string,
+  destName: string
+): Promise<string> {
   // Resolve destination path
   const destPath = path.resolve(process.cwd(), destName);
 
@@ -40,14 +37,26 @@ export function scaffold(templateKey: TemplateKey, destName: string): string {
     }
   }
 
+  let templatePath: string;
+
+  try {
+    // Resolve template (local or remote)
+    const resolved = await resolveTemplate(templateName);
+    templatePath = resolved.path;
+  } catch (error) {
+    throw new Error(
+      `Failed to resolve template "${templateName}": ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
   // Validate template exists
-  if (!fs.existsSync(template.path)) {
-    throw new Error(`Template directory not found: ${template.path}`);
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`Template directory not found: ${templatePath}`);
   }
 
   try {
     // Copy template files
-    copyDir(template.path, destPath);
+    copyDir(templatePath, destPath);
 
     // Replace tokens
     const tokens = {
