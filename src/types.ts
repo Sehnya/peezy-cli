@@ -8,6 +8,7 @@ export interface NewOptions {
   install?: boolean;
   git?: boolean;
   pm?: PackageManager;
+  json?: boolean;
 }
 
 export interface TemplateDefinition {
@@ -65,4 +66,53 @@ export interface RegistryCache {
   registry?: RemoteRegistry;
   lastFetch: number;
   templates: Record<string, CachedTemplate>;
+}
+
+// Peezy Lock File Types
+export interface PeezyLockFile {
+  $schema: string;
+  peezyVersion: string;
+  formatVersion: number;
+  project: {
+    name: string;
+    createdAt: string;
+  };
+  template: {
+    name: string;
+    version: string;
+    source: TemplateSource;
+    commit?: string;
+    engine: "tar" | "git" | "dir";
+  };
+  plugins?: PluginLock[];
+  options: {
+    flags: Record<string, boolean>;
+    answers?: Record<string, any>;
+  };
+  envProviders?: EnvProviderLock[];
+  checksums: {
+    files: Record<string, string>;
+  };
+}
+
+export interface TemplateSource {
+  type: "registry" | "npm" | "git" | "local";
+  registry?: string;
+  resolvedUrl?: string;
+  integrity?: string;
+  spec?: string;
+  path?: string;
+}
+
+export interface PluginLock {
+  name: string;
+  version: string;
+  source: TemplateSource;
+  integrity?: string;
+}
+
+export interface EnvProviderLock {
+  name: string;
+  projectId?: string;
+  mappings: Record<string, string>;
 }

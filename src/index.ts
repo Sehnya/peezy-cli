@@ -11,6 +11,12 @@ import { log } from "./utils/logger.js";
 import { validateVersions } from "./utils/version-check.js";
 import { VersionMonitoringService } from "./plugins/version-scrubbing/services/version-monitoring.js";
 import { loadConfig } from "./plugins/version-scrubbing/config/plugin-config.js";
+import {
+  createSuccessOutput,
+  createErrorOutput,
+  outputJson,
+  OutputCapture,
+} from "./utils/json-output.js";
 import type { NewOptions, TemplateKey, PackageManager } from "./types.js";
 
 const program = new Command();
@@ -27,67 +33,123 @@ program
   .command("list")
   .description("List available templates")
   .option("--remote", "Include remote templates", false)
+  .option("--json", "Output in JSON format")
   .action(async (options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
     try {
       if (options.remote) {
         const { getAllTemplates } = await import("./registry.js");
         const { local, remote } = await getAllTemplates();
 
-        log.info("Local templates:");
-        console.log();
+        if (options.json) {
+          const { warnings, errors } = outputCapture.stop();
+          const localTemplates = local.map((key) => ({
+            name: key,
+            title: registry[key].title,
+            popular: registry[key].popular || false,
+            type: "local" as const,
+          }));
 
-        local.forEach((key) => {
-          const template = registry[key];
-          const indicator = template.popular ? log.popular("") : "  ";
-          const title = template.popular
-            ? log.highlight(template.title)
-            : template.title;
-          console.log(`${indicator}${key.padEnd(20)} ${title}`);
-        });
+          const remoteTemplates = remote.map((template) => ({
+            name: template.name,
+            latest: template.latest,
+            versions: Object.keys(template.versions),
+            tags: template.versions[template.latest]?.tags || [],
+            type: "remote" as const,
+          }));
 
-        if (remote.length > 0) {
+          const output = createSuccessOutput(
+            {
+              local: localTemplates,
+              remote: remoteTemplates,
+            },
+            warnings
+          );
+          outputJson(output);
+        } else {
+          log.info("Local templates:");
           console.log();
-          log.info("Remote templates:");
-          console.log();
 
-          remote.forEach((template) => {
-            const tags =
-              template.versions[template.latest]?.tags?.join(", ") || "";
-            console.log(
-              `  ${template.name.padEnd(30)} ${template.latest.padEnd(10)} ${tags}`
-            );
+          local.forEach((key) => {
+            const template = registry[key];
+            const indicator = template.popular ? log.popular("") : "  ";
+            const title = template.popular
+              ? log.highlight(template.title)
+              : template.title;
+            console.log(`${indicator}${key.padEnd(20)} ${title}`);
           });
+
+          if (remote.length > 0) {
+            console.log();
+            log.info("Remote templates:");
+            console.log();
+
+            remote.forEach((template) => {
+              const tags =
+                template.versions[template.latest]?.tags?.join(", ") || "";
+              console.log(
+                `  ${template.name.padEnd(30)} ${template.latest.padEnd(10)} ${tags}`
+              );
+            });
+          }
+
+          console.log();
+          log.info("Popular templates are marked with ⭐");
+          log.info(
+            "Use 'peezy add @org/template@version' to cache remote templates"
+          );
         }
-
-        console.log();
-        log.info("Popular templates are marked with ⭐");
-        log.info(
-          "Use 'peezy add @org/template@version' to cache remote templates"
-        );
       } else {
-        log.info("Available templates:");
-        console.log();
-
         const orderedTemplates = getOrderedTemplates();
 
-        orderedTemplates.forEach((key) => {
-          const template = registry[key];
-          const indicator = template.popular ? log.popular("") : "  ";
-          const title = template.popular
-            ? log.highlight(template.title)
-            : template.title;
-          console.log(`${indicator}${key.padEnd(20)} ${title}`);
-        });
+        if (options.json) {
+          const { warnings, errors } = outputCapture.stop();
+          const templates = orderedTemplates.map((key) => ({
+            name: key,
+            title: registry[key].title,
+            popular: registry[key].popular || false,
+            type: "local" as const,
+          }));
 
-        console.log();
-        log.info("Popular templates are marked with ⭐");
-        log.info("Use --remote to see remote templates");
+          const output = createSuccessOutput({ templates }, warnings);
+          outputJson(output);
+        } else {
+          log.info("Available templates:");
+          console.log();
+
+          orderedTemplates.forEach((key) => {
+            const template = registry[key];
+            const indicator = template.popular ? log.popular("") : "  ";
+            const title = template.popular
+              ? log.highlight(template.title)
+              : template.title;
+            console.log(`${indicator}${key.padEnd(20)} ${title}`);
+          });
+
+          console.log();
+          log.info("Popular templates are marked with ⭐");
+          log.info("Use --remote to see remote templates");
+        }
       }
     } catch (error) {
-      log.err(
-        `Failed to list templates: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to list templates: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
   });
 
@@ -101,8 +163,15 @@ program
   .option("-p, --pm <pm>", "Package manager (bun|npm|pnpm|yarn)")
   .option("--no-install", "Skip dependency installation")
   .option("--no-git", "Skip git initialization")
+  .option("--json", "Output in JSON format")
   .description("Create a new project from a template")
   .action(async (templateArg?: string, nameArg?: string, opts?: any) => {
+    const outputCapture = new OutputCapture();
+
+    if (opts?.json) {
+      outputCapture.start();
+    }
+
     try {
       // Validate version requirements
       const versionCheck = validateVersions(templateArg);
@@ -122,101 +191,106 @@ program
       // Get ordered templates for prompts
       const orderedTemplates = getOrderedTemplates();
 
-      // Interactive prompts for missing arguments
-      const answers = await prompts(
-        [
-          {
-            type: templateArg ? null : "select",
-            name: "template",
-            message: "Choose a template:",
-            choices: orderedTemplates.map((key) => {
-              const template = registry[key];
-              const title = template.popular
-                ? `⭐ ${key} — ${template.title}`
-                : `  ${key} — ${template.title}`;
-              return { title, value: key };
-            }),
-            initial: 0,
-          },
-          {
-            type: nameArg ? null : "text",
-            name: "name",
-            message: "Project name:",
-            initial: "my-app",
-            validate: (value: string) => {
-              if (!value || value.trim().length === 0) {
-                return "Project name is required";
-              }
-              if (value.length > 214) {
-                return "Project name must be less than 214 characters";
-              }
-              // Check for reserved names first
-              const reserved = [
-                "node_modules",
-                "package.json",
-                "package-lock.json",
-                ".git",
-                ".env",
-              ];
-              if (reserved.includes(value.toLowerCase())) {
-                return `"${value}" is a reserved name and cannot be used`;
-              }
-              if (value.startsWith(".")) {
-                return "Project name cannot start with a dot";
-              }
-              if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-                return "Project name can only contain letters, numbers, hyphens, and underscores";
-              }
-              if (value.startsWith("-") || value.endsWith("-")) {
-                return "Project name cannot start or end with hyphens";
-              }
-              return true;
+      // Interactive prompts for missing arguments (skip in JSON mode)
+      let answers: any = {};
+
+      if (!opts?.json) {
+        answers = await prompts(
+          [
+            {
+              type: templateArg ? null : "select",
+              name: "template",
+              message: "Choose a template:",
+              choices: orderedTemplates.map((key) => {
+                const template = registry[key];
+                const title = template.popular
+                  ? `⭐ ${key} — ${template.title}`
+                  : `  ${key} — ${template.title}`;
+                return { title, value: key };
+              }),
+              initial: 0,
             },
-          },
+            {
+              type: nameArg ? null : "text",
+              name: "name",
+              message: "Project name:",
+              initial: "my-app",
+              validate: (value: string) => {
+                if (!value || value.trim().length === 0) {
+                  return "Project name is required";
+                }
+                if (value.length > 214) {
+                  return "Project name must be less than 214 characters";
+                }
+                // Check for reserved names first
+                const reserved = [
+                  "node_modules",
+                  "package.json",
+                  "package-lock.json",
+                  ".git",
+                  ".env",
+                ];
+                if (reserved.includes(value.toLowerCase())) {
+                  return `"${value}" is a reserved name and cannot be used`;
+                }
+                if (value.startsWith(".")) {
+                  return "Project name cannot start with a dot";
+                }
+                if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+                  return "Project name can only contain letters, numbers, hyphens, and underscores";
+                }
+                if (value.startsWith("-") || value.endsWith("-")) {
+                  return "Project name cannot start or end with hyphens";
+                }
+                return true;
+              },
+            },
+            {
+              type: opts?.pm ? null : "select",
+              name: "pm",
+              message: "Package manager:",
+              choices: [
+                { title: "⭐ bun", value: "bun" },
+                { title: "  npm", value: "npm" },
+                { title: "  pnpm", value: "pnpm" },
+                { title: "  yarn", value: "yarn" },
+              ],
+              initial: 0,
+            },
+            {
+              type: typeof opts?.install === "boolean" ? null : "toggle",
+              name: "install",
+              message: "Install dependencies?",
+              initial: true,
+              active: "yes",
+              inactive: "no",
+            },
+            {
+              type: typeof opts?.git === "boolean" ? null : "toggle",
+              name: "git",
+              message: "Initialize git repository?",
+              initial: true,
+              active: "yes",
+              inactive: "no",
+            },
+          ],
           {
-            type: opts?.pm ? null : "select",
-            name: "pm",
-            message: "Package manager:",
-            choices: [
-              { title: "⭐ bun", value: "bun" },
-              { title: "  npm", value: "npm" },
-              { title: "  pnpm", value: "pnpm" },
-              { title: "  yarn", value: "yarn" },
-            ],
-            initial: 0,
-          },
-          {
-            type: typeof opts?.install === "boolean" ? null : "toggle",
-            name: "install",
-            message: "Install dependencies?",
-            initial: true,
-            active: "yes",
-            inactive: "no",
-          },
-          {
-            type: typeof opts?.git === "boolean" ? null : "toggle",
-            name: "git",
-            message: "Initialize git repository?",
-            initial: true,
-            active: "yes",
-            inactive: "no",
-          },
-        ],
-        {
-          onCancel: () => {
-            log.warn("Operation cancelled");
-            process.exit(0);
-          },
-        }
-      );
+            onCancel: () => {
+              log.warn("Operation cancelled");
+              process.exit(0);
+            },
+          }
+        );
+      }
 
       // Merge arguments and prompt answers
       const config: NewOptions = {
         template: (templateArg as TemplateKey) ?? answers.template,
         name: nameArg ?? answers.name,
-        pm: opts?.pm ?? answers.pm,
-        install: opts?.install ?? answers.install,
-        git: opts?.git ?? answers.git,
+        pm: opts?.pm ?? answers.pm ?? "bun", // Default to bun in JSON mode
+        install: opts?.install ?? answers.install ?? true, // Default to true in JSON mode
+        git: opts?.git ?? answers.git ?? true, // Default to true in JSON mode
+        json: opts?.json,
       };
 
       // Validate required fields
@@ -303,7 +377,11 @@ program
         `Scaffolding ${log.highlight(config.template)} → ${log.highlight(config.name)}`
       );
 
-      const projectPath = await scaffold(config.template, config.name);
+      const scaffoldResult = await scaffold(
+        config.template,
+        config.name,
+        config
+      );
       log.ok(`Files created in ./${config.name}`);
 
       // Install dependencies
@@ -311,7 +389,7 @@ program
         try {
           const pm = config.pm ?? (await getRecommendedPackageManager());
           log.info(`Installing dependencies with ${pm}...`);
-          await installDeps(pm, projectPath);
+          await installDeps(pm, scaffoldResult.projectPath);
           log.ok("Dependencies installed");
         } catch (error) {
           log.warn(
@@ -325,7 +403,7 @@ program
       if (config.git !== false) {
         try {
           log.info("Initializing git repository...");
-          await initGit(projectPath);
+          await initGit(scaffoldResult.projectPath);
           log.ok("Git repository initialized");
         } catch (error) {
           log.warn(
@@ -350,11 +428,38 @@ program
               : "npm run dev";
       console.log(`  ${devCommand}`);
       console.log();
+
+      // Handle JSON output
+      if (opts?.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(
+          {
+            project: {
+              name: config.name,
+              path: scaffoldResult.projectPath,
+              template: scaffoldResult.templateInfo,
+            },
+            options: config,
+            nextSteps: [`cd ${config.name}`, devCommand],
+          },
+          warnings
+        );
+        outputJson(output);
+      }
     } catch (error) {
-      log.err(
-        `Failed to create project: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
+      if (opts?.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to create project: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
   });
 
@@ -371,18 +476,66 @@ program
     "Comma-separated list of ports to check",
     "3000,5173,8000"
   )
+  .option("--json", "Output in JSON format")
   .action(async (options) => {
-    const { doctor } = await import("./commands/doctor.js");
-    const ports = String(options.ports)
-      .split(",")
-      .map((s: string) => parseInt(s.trim(), 10))
-      .filter((n: number) => !Number.isNaN(n));
-    const code = await doctor({
-      fixLint: !!options.fixLint,
-      fixEnvExamples: !!options.fixEnvExamples,
-      ports,
-    });
-    process.exit(code);
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { doctor } = await import("./commands/doctor.js");
+      const ports = String(options.ports)
+        .split(",")
+        .map((s: string) => parseInt(s.trim(), 10))
+        .filter((n: number) => !Number.isNaN(n));
+
+      const result = await doctor({
+        fixLint: !!options.fixLint,
+        fixEnvExamples: !!options.fixEnvExamples,
+        ports,
+        json: !!options.json,
+      });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        if (typeof result === "number") {
+          // Legacy return format
+          const output =
+            result === 0
+              ? createSuccessOutput({ healthy: true }, warnings)
+              : createErrorOutput(["Health checks failed"], warnings);
+          outputJson(output);
+        } else {
+          // New structured format
+          const output = result.ok
+            ? createSuccessOutput(result, warnings)
+            : createErrorOutput(
+                result.errors,
+                warnings.concat(result.warnings)
+              );
+          outputJson(output);
+        }
+      } else {
+        const code = typeof result === "number" ? result : result.ok ? 0 : 1;
+        process.exit(code);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Doctor failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
   });
 
 program
@@ -392,9 +545,41 @@ program
   )
   .argument("<subcommand>")
   .option("--schema <path>", "Path to env schema JSON (required/optional keys)")
+  .option("--json", "Output in JSON format")
   .action(async (subcommand: string, options) => {
-    const { runEnv } = await import("./commands/env.js");
-    await runEnv(subcommand as any, { schema: options.schema });
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { runEnv } = await import("./commands/env.js");
+      const result = await runEnv(subcommand as any, {
+        schema: options.schema,
+        json: options.json,
+      });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(result, warnings);
+        outputJson(output);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Env command failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
   });
 
 program
@@ -403,21 +588,97 @@ program
   .option("--name <name>")
   .option("--no-badges")
   .option("--changelog", "Also generate CHANGELOG.md", false)
+  .option("--json", "Output in JSON format")
   .action(async (options) => {
-    const { generateReadme, generateChangelog } = await import(
-      "./commands/readme-changelog.js"
-    );
-    await generateReadme({ name: options.name, badges: options.badges });
-    if (options.changelog) await generateChangelog();
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { generateReadme, generateChangelog } = await import(
+        "./commands/readme-changelog.js"
+      );
+
+      const readmeResult = await generateReadme({
+        name: options.name,
+        badges: options.badges,
+        json: options.json,
+      });
+
+      let changelogResult;
+      if (options.changelog) {
+        changelogResult = await generateChangelog({ json: options.json });
+      }
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(
+          {
+            readme: readmeResult,
+            changelog: changelogResult,
+          },
+          warnings
+        );
+        outputJson(output);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `README generation failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
   });
 
 program
   .command("upgrade")
   .description("Check for updates to templates/plugins and preview diffs")
   .option("--dry-run", "Preview changes only", false)
+  .option("--json", "Output in JSON format")
   .action(async (options) => {
-    const { upgrade } = await import("./commands/upgrade.js");
-    await upgrade({ dryRun: !!options.dryRun });
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { upgrade } = await import("./commands/upgrade.js");
+      const result = await upgrade({
+        dryRun: !!options.dryRun,
+        json: options.json,
+      });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(result, warnings);
+        outputJson(output);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Upgrade failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
   });
 
 /**
@@ -428,19 +689,48 @@ program
   .argument("<template>", "Template to add (@org/template@version)")
   .option("--force", "Force re-download if already cached", false)
   .option("--version <version>", "Specific version to download")
+  .option("--json", "Output in JSON format")
   .description("Add a remote template to the local cache")
   .action(async (templateName: string, options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
     try {
       const { addTemplate } = await import("./commands/add.js");
-      await addTemplate(templateName, {
+      const result = await addTemplate(templateName, {
         force: options.force,
         version: options.version,
       });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(
+          {
+            template: templateName,
+            cached: true,
+            path: result?.path,
+          },
+          warnings
+        );
+        outputJson(output);
+      }
     } catch (error) {
-      log.err(
-        `Failed to add template: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to add template: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
   });
 
@@ -451,29 +741,162 @@ program
   .command("cache")
   .description("Manage template cache")
   .argument("[action]", "Action to perform (list, clear)", "list")
-  .action(async (action: string) => {
+  .option("--json", "Output in JSON format")
+  .action(async (action: string, options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
     try {
-      const { listCachedTemplates, clearCache } = await import(
+      const { listCachedTemplates, clearCache, getCacheInfo } = await import(
         "./commands/add.js"
       );
 
       switch (action) {
         case "list":
-          await listCachedTemplates();
+          if (options.json) {
+            const cacheInfo = await getCacheInfo();
+            const { warnings, errors } = outputCapture.stop();
+            const output = createSuccessOutput(cacheInfo, warnings);
+            outputJson(output);
+          } else {
+            await listCachedTemplates();
+          }
           break;
         case "clear":
           await clearCache();
+          if (options.json) {
+            const { warnings, errors } = outputCapture.stop();
+            const output = createSuccessOutput({ cleared: true }, warnings);
+            outputJson(output);
+          }
           break;
         default:
-          log.err(`Unknown cache action: ${action}`);
-          log.info("Available actions: list, clear");
-          process.exit(1);
+          if (options.json) {
+            const { warnings } = outputCapture.stop();
+            const output = createErrorOutput(
+              [`Unknown cache action: ${action}`],
+              warnings
+            );
+            outputJson(output);
+          } else {
+            log.err(`Unknown cache action: ${action}`);
+            log.info("Available actions: list, clear");
+            process.exit(1);
+          }
       }
     } catch (error) {
-      log.err(
-        `Cache operation failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Cache operation failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
+  });
+
+/**
+ * Reproduce command - recreate project from lock file
+ */
+program
+  .command("reproduce")
+  .argument("<name>", "Name for the reproduced project")
+  .option("--lock-file <path>", "Path to peezy.lock.json file")
+  .option("--verify", "Verify checksums after reproduction", false)
+  .option("--json", "Output in JSON format")
+  .description("Reproduce a project from peezy.lock.json")
+  .action(async (projectName: string, options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { reproduceProject } = await import("./commands/reproduce.js");
+      const result = await reproduceProject(projectName, {
+        lockFile: options.lockFile,
+        verify: options.verify,
+        json: options.json,
+      });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(
+          {
+            project: projectName,
+            reproduced: result.success,
+            lockFile: result.lockFile,
+            verification: result.verification,
+          },
+          warnings
+        );
+        outputJson(output);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to reproduce project: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
+  });
+
+/**
+ * Verify command - check project against lock file
+ */
+program
+  .command("verify")
+  .option("--project-path <path>", "Path to project directory", process.cwd())
+  .option("--json", "Output in JSON format")
+  .description("Verify project matches its peezy.lock.json")
+  .action(async (options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { verifyProject } = await import("./commands/reproduce.js");
+      const result = await verifyProject(options.projectPath);
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        const output = createSuccessOutput(result, warnings);
+        outputJson(output);
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to verify project: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
   });
 
@@ -493,7 +916,14 @@ program
   )
   .option("--include-prerelease", "Include prerelease versions", false)
   .option("--security-only", "Only show security-related updates", false)
+  .option("--json", "Output in standardized JSON format (overrides --format)")
   .action(async (options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
     try {
       const config = loadConfig();
       const versionService = new VersionMonitoringService(config);
@@ -508,7 +938,17 @@ program
           "medium"
         );
 
-        if (options.format === "json") {
+        if (options.json) {
+          const { warnings, errors } = outputCapture.stop();
+          const output = createSuccessOutput(
+            {
+              type: "security-advisories",
+              advisories,
+            },
+            warnings
+          );
+          outputJson(output);
+        } else if (options.format === "json") {
           console.log(JSON.stringify(advisories, null, 2));
         } else {
           console.log("🔒 Security Advisories");
@@ -527,16 +967,40 @@ program
         }
       } else {
         const report = await versionService.generateReport(
-          options.format as "json" | "markdown" | "console",
+          options.json
+            ? "json"
+            : (options.format as "json" | "markdown" | "console"),
           true
         );
-        console.log(report);
+
+        if (options.json) {
+          const { warnings, errors } = outputCapture.stop();
+          const output = createSuccessOutput(
+            {
+              type: "version-report",
+              report: options.format === "json" ? JSON.parse(report) : report,
+            },
+            warnings
+          );
+          outputJson(output);
+        } else {
+          console.log(report);
+        }
       }
     } catch (error) {
-      log.err(
-        `Failed to check versions: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to check versions: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
   });
 
