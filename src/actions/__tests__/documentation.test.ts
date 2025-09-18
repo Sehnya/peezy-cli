@@ -131,6 +131,11 @@ describe("Documentation Validation", () => {
         "--force",
         "--version",
         "--remote",
+        "--databases",
+        "--redis",
+        "--search",
+        "--orm",
+        "--volumes",
       ];
       const flagMatches = readmeContent.match(/--[\w-]+/g);
 

@@ -1,7 +1,7 @@
 {
   "name": "peezy-cli",
-  "version": "0.1.4",
-  "description": "Initialize projects across runtimes with deterministic builds and machine-consumable outputs — instantly.",
+  "version": "0.1.5",
+  "description": "Initialize projects across runtimes with deterministic builds, database integration, and ORM support — instantly.",
   "type": "module",
   "bin": {
     "peezy": "bin/peezy.mjs"
@@ -31,6 +31,12 @@
     "deterministic",
     "reproducible",
     "json-output",
+    "database",
+    "orm",
+    "prisma",
+    "drizzle",
+    "docker",
+    "volumes",
     "react",
     "vue",
     "nextjs",

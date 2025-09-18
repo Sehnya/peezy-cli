@@ -146,6 +146,11 @@ All commands support the `--json` flag for machine-consumable output with consis
 - `-p, --pm <pm>` - Package manager (bun|npm|pnpm|yarn)
 - `--no-install` - Skip dependency installation
 - `--no-git` - Skip git initialization
+- `--databases <list>` - Comma-separated databases (postgresql,mysql,sqlite,mongodb)
+- `--redis` - Include Redis for caching/sessions
+- `--search` - Include Elasticsearch for search functionality
+- `--orm <orm>` - ORM to configure (prisma|drizzle|both)
+- `--volumes <type>` - Volume configuration (preconfigured|custom)
 
 ## Available Templates
 
@@ -208,6 +213,25 @@ peezy new vite-vue-tailwind my-vue-app --pm npm
 
 # Interactive mode (recommended for first-time users)
 peezy new
+```
+
+### Database Integration
+
+```bash
+# Create Express API with PostgreSQL and Redis
+peezy new express-typescript my-api --databases postgresql --redis
+
+# Create full-stack app with Prisma ORM
+peezy new nextjs-app-router my-fullstack --databases postgresql --orm prisma
+
+# Create API with both Prisma and Drizzle ORMs
+peezy new express-typescript my-api --databases postgresql --orm both
+
+# Create Flask app with MongoDB and preconfigured volumes
+peezy new flask my-python-api --databases mongodb --redis --volumes preconfigured
+
+# All database services configured with Docker Compose and volumes
+cd my-api && docker-compose up -d
 ```
 
 ### Deterministic Workflows
@@ -318,6 +342,60 @@ export default {
 
 Note: Plugin support is experimental and API may change.
 
+## Database Integration
+
+### Automatic Database Setup
+
+Peezy CLI automatically generates production-ready database configurations with Docker Compose services, environment variables, and initialization scripts.
+
+#### Supported Databases
+
+- **PostgreSQL** - Production-ready with connection pooling and health checks
+- **MySQL** - Optimized configuration with UTF8MB4 support
+- **SQLite** - Lightweight option for development and small applications
+- **MongoDB** - Document database with replica set support
+- **Redis** - Caching and session storage with persistence
+- **Elasticsearch** - Full-text search and analytics
+
+#### ORM Integration
+
+- **Prisma** - Type-safe database client with migrations and introspection
+- **Drizzle** - Lightweight TypeScript ORM with SQL-like syntax
+- **Both** - Configure both ORMs for flexibility and comparison
+
+#### Volume Management
+
+- **Preconfigured volumes** - Ready-to-use bind mounts in ./volumes directory
+- **Custom volumes** - Named Docker volumes for production deployments
+- **Persistent storage** - Data survives container restarts and rebuilds
+
+#### Generated Files
+
+- **Environment variables** - Automatically populated .env files
+- **Docker Compose services** - Production-ready containers with health checks
+- **Database initialization scripts** - SQL scripts for schema setup
+- **Connection configuration** - Database clients and connection pooling
+- **Documentation** - Complete setup and troubleshooting guides
+
+#### Example Usage
+
+```bash
+# Create API with PostgreSQL and Redis
+peezy new express-typescript my-api --databases postgresql --redis
+
+# Generated files include:
+# - .env with DATABASE_URL and REDIS_URL
+# - docker-compose.yml with postgres and redis services
+# - database/init/01-init-postgresql.sql
+# - src/config/database.ts with connection setup
+# - DATABASE.md with complete documentation
+
+# Start all services
+cd my-api
+docker-compose up -d
+npm run dev
+```
+
 ## Deterministic Builds
 
 ### peezy.lock.json
@@ -420,7 +498,35 @@ MIT © [Sehnya](https://github.com/Sehnya)
 
 ## Changelog
 
-### 0.1.4 (Latest)
+### 0.1.5 (Latest)
+
+**Major Features:**
+
+- **Prisma ORM Integration** - Complete setup with schema, migrations, and seeding
+- **Drizzle ORM Integration** - Lightweight TypeScript ORM with SQL-like syntax
+- **Volume Management** - Preconfigured Docker volumes with persistent storage
+- **Enhanced Database Setup** - Production-ready configurations with health checks
+- **ORM Flexibility** - Support for Prisma, Drizzle, or both ORMs simultaneously
+
+**New CLI Options:**
+
+- `--orm <orm>` - Configure Prisma, Drizzle, or both ORMs
+- `--volumes <type>` - Preconfigured or custom volume configuration
+
+**Enhanced Templates:**
+
+- Express TypeScript template with ORM dependencies and scripts
+- Database configuration with connection pooling and health checks
+- Volume directories with backup documentation
+
+**Generated Files:**
+
+- Prisma schema, migrations, and seed files
+- Drizzle schema, migrations, and configuration
+- Docker volumes with persistent storage
+- Enhanced package.json with ORM scripts
+
+### 0.1.4
 
 **Major Features:**
 
@@ -428,6 +534,7 @@ MIT © [Sehnya](https://github.com/Sehnya)
 - **Machine-consumable JSON output** - All commands support --json flag with standardized format
 - **Project reproduction** - peezy reproduce command for identical project recreation
 - **File integrity verification** - peezy verify command with comprehensive checksum validation
+- **Database integration** - Automatic SQL database setup with Docker Compose and environment configuration
 - **Interactive prompt suppression** - Clean JSON mode for automation and CI/CD
 
 **New Commands:**

@@ -9,6 +9,11 @@ export interface NewOptions {
   git?: boolean;
   pm?: PackageManager;
   json?: boolean;
+  databases?: string[];
+  includeRedis?: boolean;
+  includeSearch?: boolean;
+  orm?: "prisma" | "drizzle" | "both";
+  volumes?: "preconfigured" | "custom";
 }
 
 export interface TemplateDefinition {

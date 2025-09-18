@@ -20,7 +20,7 @@ export function createSuccessOutput<T>(
     ok: true,
     data,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.4",
+    version: process.env.npm_package_version || "0.1.5",
   };
 }
 
@@ -35,7 +35,7 @@ export function createErrorOutput(
     ok: false,
     errors,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.4",
+    version: process.env.npm_package_version || "0.1.5",
   };
 }
 

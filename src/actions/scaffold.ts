@@ -8,6 +8,10 @@ import {
 } from "../utils/fsx.js";
 import { resolveTemplate } from "../registry.js";
 import { createLockFile } from "../utils/lock-file.js";
+import {
+  generateDatabaseSetup,
+  applyDatabaseConfig,
+} from "../utils/database-config.js";
 import type { TemplateKey, NewOptions } from "../types.js";
 
 /**
@@ -102,6 +106,32 @@ export async function scaffold(
 
     replaceTokens(destPath, tokens);
 
+    // Apply database configuration if requested
+    if (options.databases || shouldIncludeDatabase(templateInfo.name)) {
+      try {
+        const databaseSetup = generateDatabaseSetup(
+          destName,
+          templateInfo.name,
+          {
+            databases: options.databases,
+            includeRedis: options.includeRedis,
+            includeSearch: options.includeSearch,
+            orm: options.orm,
+            volumes: options.volumes,
+          }
+        );
+
+        if (databaseSetup.databases.length > 0) {
+          await applyDatabaseConfig(destPath, databaseSetup);
+        }
+      } catch (error) {
+        // Log warning but don't fail the scaffold
+        console.warn(
+          `Warning: Failed to apply database configuration: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
     // Create peezy.lock.json for deterministic builds
     await createLockFile(
       destPath,
@@ -153,4 +183,18 @@ export async function scaffold(
 
     throw error;
   }
+}
+
+/**
+ * Check if template should include database by default
+ */
+function shouldIncludeDatabase(templateName: string): boolean {
+  const databaseTemplates = [
+    "nextjs-app-router",
+    "express-typescript",
+    "flask",
+    "fastapi",
+    "flask-bun-hybrid",
+  ];
+  return databaseTemplates.includes(templateName);
 }

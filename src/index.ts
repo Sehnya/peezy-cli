@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name("peezy")
   .description("Initialize projects across runtimes — instantly")
-  .version("0.1.4");
+  .version("0.1.5");
 
 /**
  * List command - show all available templates
@@ -163,6 +163,18 @@ program
   .option("-p, --pm <pm>", "Package manager (bun|npm|pnpm|yarn)")
   .option("--no-install", "Skip dependency installation")
   .option("--no-git", "Skip git initialization")
+  .option(
+    "--databases <databases>",
+    "Comma-separated list of databases (postgresql,mysql,sqlite,mongodb)"
+  )
+  .option("--redis", "Include Redis for caching/sessions")
+  .option("--search", "Include Elasticsearch for search functionality")
+  .option("--orm <orm>", "ORM to configure (prisma|drizzle|both)")
+  .option(
+    "--volumes <type>",
+    "Volume configuration (preconfigured|custom)",
+    "preconfigured"
+  )
   .option("--json", "Output in JSON format")
   .description("Create a new project from a template")
   .action(async (templateArg?: string, nameArg?: string, opts?: any) => {
@@ -283,6 +295,11 @@ program
         );
       }
 
+      // Parse database options
+      const databases = opts?.databases
+        ? opts.databases.split(",").map((db: string) => db.trim())
+        : undefined;
+
       // Merge arguments and prompt answers
       const config: NewOptions = {
         template: (templateArg as TemplateKey) ?? answers.template,
@@ -290,6 +307,11 @@ program
         pm: opts?.pm ?? answers.pm ?? "bun", // Default to bun in JSON mode
         install: opts?.install ?? answers.install ?? true, // Default to true in JSON mode
         git: opts?.git ?? answers.git ?? true, // Default to true in JSON mode
+        databases,
+        includeRedis: opts?.redis,
+        includeSearch: opts?.search,
+        orm: opts?.orm as "prisma" | "drizzle" | "both",
+        volumes: opts?.volumes as "preconfigured" | "custom",
         json: opts?.json,
       };
 

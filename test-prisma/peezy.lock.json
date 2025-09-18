@@ -1,0 +1,66 @@
+{
+  "$schema": "https://peezy.dev/schemas/peezy.lock.schema.json",
+  "peezyVersion": "0.1.5",
+  "formatVersion": 1,
+  "project": {
+    "name": "test-prisma",
+    "createdAt": "2025-09-18T13:24:18.430Z"
+  },
+  "template": {
+    "name": "express-typescript",
+    "version": "latest",
+    "source": {
+      "type": "local",
+      "path": "/Users/sehnya/Code 2.0/peezy/templates/express-typescript"
+    },
+    "engine": "dir"
+  },
+  "options": {
+    "flags": {
+      "installDeps": false,
+      "initGit": false
+    },
+    "answers": {}
+  },
+  "checksums": {
+    "files": {
+      ".env": "sha256-1337d58d6932b06aba5dbb6e4bfb00f951abd78091534a368432589cee8fdf18",
+      ".env.example": "sha256-1337d58d6932b06aba5dbb6e4bfb00f951abd78091534a368432589cee8fdf18",
+      ".eslintrc.json": "sha256-e882bf93106a4ec01b682e75385600864409798988c056325accc8ee5b03ac50",
+      ".prettierrc": "sha256-4bf4cdc522f46799d38c4269a6b606f357e95eb8983e0e5953cf37c487061291",
+      "DATABASE.md": "sha256-d05d24ff9225ac474f888df7adbf32ed164c3b332434978a7ae53eeca2765806",
+      "DEVELOPMENT.md": "sha256-1c5daf3d8c88ecd43321e2a90392fa9f5aadf7fb3d065d9e4ca18f1fbd0902a3",
+      "Dockerfile": "sha256-026d6db340114b12812edb33d2c0d717c4daf574045406494ed51cabcb93eefe",
+      "README.md": "sha256-135d75f40082ab2db0b2ee8fb9ef48de2271888ea0299ba00367a18142b1044d",
+      "database/init/01-init-postgresql.sql": "sha256-41a51e0a141704da3318b2e8051d512adac6157f800a80f628e602526a59d60a",
+      "docker-compose.dev.yml": "sha256-796df68fd01e68f399ac8caaa4fe30a626ff12f5a8c31db4891715bc3dde8061",
+      "docker-compose.yml": "sha256-ed808b56ace0196095a5fc33e81218fad9f2634e974a87aa90de01c4aeb559ec",
+      "jest.config.js": "sha256-59f558f86295b73b563d78b21a8e64554b98fc5cce99abfe7dbfd658fceff7a0",
+      "package.json": "sha256-bb95297daaf32da52de207f046f6b5c268585074cd08fa4793916b9b4476fbe5",
+      "prisma/migrations/001_init/migration.sql": "sha256-c3388972b56e598fdc1cbc42e78c85a69ced9f64ce756c961059d021cb2e5e7e",
+      "prisma/schema.prisma": "sha256-94e00e9c751009c42d2ae76cd784593ec8cdf12b6dbfb79be79d4e2438c47548",
+      "prisma/seed.ts": "sha256-127c342572e7c66aad6ce66947fa40f9d5413dba1b959dc3f44330520ae2c65b",
+      "src/__tests__/health.test.ts": "sha256-70257194d402e5e3ada2be8cdda36d54a2e01e59955cffcc721b8e9de2c5aef2",
+      "src/__tests__/setup.ts": "sha256-c700c0a85f8ad7cc420be6f100d4cc80f3e89f3e26d74fbd2e533cdda6431d86",
+      "src/__tests__/users.test.ts": "sha256-337f0e754e33884f79bd22437696f3e43ed0822a198302291d6a0246c76a9798",
+      "src/config/database.ts": "sha256-2b20b21dcf6d18e555eedc1db8b51c66867927474d61dd507840f77234e69423",
+      "src/config/environment.ts": "sha256-6a0d41ce8f5e3e1078315a0b304d7b3cc037cf613c7e4745e2f8945f108fa8ce",
+      "src/controllers/UserController.ts": "sha256-dd92fb51904d62fecd604be80a983e07754ef7172ed9fbced440f380f76e88fc",
+      "src/index.ts": "sha256-b38831f2a3faf2ab81eddacaf81b63114102a2c5241e85df086c8cd1a5aa380f",
+      "src/middleware/errorHandler.ts": "sha256-d4d4b18fc65a42f57174c0387ad5cce4b5a3a064cdce8fbfe6d4e80571f333f8",
+      "src/middleware/notFoundHandler.ts": "sha256-e6b8f3b5600603196fd1501e6c4199964e4320a69411327e724a80c4af2cb236",
+      "src/middleware/validation.ts": "sha256-eaab18453c8a8affac66cc9c4ed17ba295c6e1dfa7db2f0f7d894302dfff5d2d",
+      "src/routes/api.ts": "sha256-afdf4833089a24a673af99096276629713f3423ef23998ed8be017175f76a8ea",
+      "src/routes/health-enhanced.ts": "sha256-00f26bdf030a50e537895633715afa122459d93cd92453c77e1feb88bee59b20",
+      "src/routes/health.ts": "sha256-8a4a5d8dbedbdfd39fb5249b48501a92d6ac3e91701d8bb3d0d66f4a19a1cc21",
+      "src/routes/users.ts": "sha256-233ce2371e8cf5bd8196dade9eb9cff7b86e4e8b5bf6ed2f76985110b17c7a17",
+      "src/services/UserService.ts": "sha256-6fa53182e9d1532d162b59251de9b1c4b7b1ab2493d032946dece6b669f716c8",
+      "src/types/User.ts": "sha256-690729df9051b506c14ee1a647db6b283d945ac007cbe6a7ce6ce562d7161931",
+      "src/utils/logger.ts": "sha256-382ea36a20fba65141f9699439620ab179f762b67f7df1b5add9ab4d9b60dfe0",
+      "tsconfig.json": "sha256-d5ecc257a1ae83a11ad8dfd0fc81a68f75fe4b9bc9729d70cb7ceb3107e3a4cf",
+      "volumes/README.md": "sha256-3186285ea70b55d2fc862d0efd2559e13cf0d6770803960bd695fb184cd0d83d",
+      "volumes/postgres/.gitkeep": "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "volumes/redis/.gitkeep": "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
