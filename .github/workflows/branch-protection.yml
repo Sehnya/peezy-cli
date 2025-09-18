@@ -1,48 +1,113 @@
 name: Branch Protection
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize]
+  workflow_dispatch:
+  schedule:
+    # Run weekly to ensure branch protection rules are maintained
+    - cron: "0 0 * * 0"
 
 jobs:
-  validate-pr:
+  setup-branch-protection:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      administration: write
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build project
-        run: npm run build
-
-      - name: Check PR size
+      - name: Setup Branch Protection Rules
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request;
-            const additions = pr.additions;
-            const changedFiles = pr.changed_files;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-            console.log(`PR Stats: +${additions} files: ${changedFiles}`);
+            // Main branch protection rules
+            const mainProtection = {
+              required_status_checks: {
+                strict: true,
+                contexts: [
+                  'test (20.x)',
+                  'test (22.x)',
+                  'security',
+                  'code-quality',
+                  'compatibility (ubuntu-latest, 20.x)',
+                  'compatibility (windows-latest, 20.x)',
+                  'compatibility (macos-latest, 20.x)'
+                ]
+              },
+              enforce_admins: false, // Allow admins to bypass for emergency fixes
+              required_pull_request_reviews: {
+                required_approving_review_count: 1,
+                dismiss_stale_reviews: true,
+                require_code_owner_reviews: false,
+                require_last_push_approval: false
+              },
+              restrictions: null, // No user/team restrictions
+              allow_force_pushes: false,
+              allow_deletions: false,
+              block_creations: false,
+              required_conversation_resolution: true,
+              lock_branch: false,
+              allow_fork_syncing: true
+            };
 
-            // Warn about very large PRs
-            if (additions > 2000 || changedFiles > 50) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: `⚠️ **Large PR Detected** - ${additions} additions across ${changedFiles} files. Consider breaking into smaller PRs for easier review.`
+            try {
+              await github.rest.repos.updateBranchProtection({
+                owner,
+                repo,
+                branch: 'main',
+                ...mainProtection
               });
+              console.log('✅ Main branch protection rules updated successfully');
+            } catch (error) {
+              console.error('❌ Failed to update main branch protection:', error.message);
+              // Don't fail the workflow if branch protection can't be set
+              // This might happen due to permissions or repository settings
+            }
+
+            // Develop branch protection rules (if it exists)
+            try {
+              await github.rest.repos.getBranch({
+                owner,
+                repo,
+                branch: 'develop'
+              });
+              
+              const developProtection = {
+                required_status_checks: {
+                  strict: true,
+                  contexts: [
+                    'test (20.x)',
+                    'security',
+                    'code-quality'
+                  ]
+                },
+                enforce_admins: false,
+                required_pull_request_reviews: {
+                  required_approving_review_count: 1,
+                  dismiss_stale_reviews: false,
+                  require_code_owner_reviews: false
+                },
+                restrictions: null,
+                allow_force_pushes: false,
+                allow_deletions: false
+              };
+
+              await github.rest.repos.updateBranchProtection({
+                owner,
+                repo,
+                branch: 'develop',
+                ...developProtection
+              });
+              console.log('✅ Develop branch protection rules updated successfully');
+            } catch (error) {
+              if (error.status === 404) {
+                console.log('ℹ️ Develop branch does not exist, skipping protection setup');
+              } else {
+                console.error('❌ Failed to update develop branch protection:', error.message);
+              }
             }

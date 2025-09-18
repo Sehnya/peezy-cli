@@ -27,6 +27,7 @@
     "update:distribution": "node scripts/update-distribution.js",
     "test:distribution": "node scripts/test-distribution.js",
     "pre-flight": "node scripts/pre-flight-check.js",
+    "lint": "tsc --noEmit",
     "release": "npm run build && npm run build:binaries && npm run update:distribution"
   },
   "keywords": [

@@ -1,14 +1,13 @@
 name: 🐛 Bug Report
-description: Report a bug or unexpected behavior
+description: Report a bug or issue with Peezy CLI
 title: "[Bug]: "
 labels: ["bug", "needs-triage"]
-assignees: []
 
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug! Please fill out the information below to help us reproduce and fix the issue.
+        Thanks for taking the time to report a bug! Please fill out the information below to help us resolve the issue.
 
   - type: textarea
     id: description
@@ -20,14 +19,14 @@ body:
       required: true
 
   - type: textarea
-    id: reproduction
+    id: steps
     attributes:
       label: Steps to Reproduce
       description: Steps to reproduce the behavior
       placeholder: |
         1. Run command '...'
-        2. Select option '...'
-        3. See error
+        2. See error '...'
+        3. Expected '...' but got '...'
     validations:
       required: true
 
@@ -35,8 +34,8 @@ body:
     id: expected
     attributes:
       label: Expected Behavior
-      description: A clear and concise description of what you expected to happen.
-      placeholder: What should have happened?
+      description: What you expected to happen
+      placeholder: Describe what should happen...
     validations:
       required: true
 
@@ -44,48 +43,58 @@ body:
     id: actual
     attributes:
       label: Actual Behavior
-      description: What actually happened instead?
-      placeholder: What actually happened?
+      description: What actually happened
+      placeholder: Describe what actually happened...
     validations:
       required: true
 
-  - type: textarea
-    id: environment
+  - type: input
+    id: version
     attributes:
-      label: Environment
-      description: Please provide your environment details
-      value: |
-        - OS: [e.g. macOS 14.0, Ubuntu 22.04, Windows 11]
-        - Node.js version: [e.g. 20.10.0]
-        - Peezy CLI version: [e.g. 0.1.4]
-        - Package manager: [e.g. npm 10.2.4, pnpm 8.12.1]
-        - Terminal: [e.g. Terminal.app, iTerm2, Windows Terminal]
+      label: Peezy CLI Version
+      description: What version of Peezy CLI are you using?
+      placeholder: "1.0.0"
     validations:
       required: true
 
-  - type: textarea
-    id: logs
+  - type: dropdown
+    id: os
     attributes:
-      label: Error Logs
-      description: If applicable, add any error messages or logs
-      render: shell
-      placeholder: Paste error logs here...
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you using?
+      placeholder: "20.10.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: Package Manager
+      description: Which package manager are you using?
+      options:
+        - npm
+        - bun
+        - pnpm
+        - yarn
+    validations:
+      required: true
 
   - type: textarea
     id: additional
     attributes:
       label: Additional Context
-      description: Add any other context about the problem here, such as screenshots or related issues.
-
-  - type: checkboxes
-    id: checklist
-    attributes:
-      label: Checklist
-      description: Please confirm the following
-      options:
-        - label: I have searched existing issues to ensure this is not a duplicate
-          required: true
-        - label: I have provided all the requested information above
-          required: true
-        - label: I am using the latest version of Peezy CLI
-          required: false
+      description: Add any other context about the problem here
+      placeholder: Any additional information that might help...

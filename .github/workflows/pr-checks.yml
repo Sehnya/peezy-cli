@@ -1,0 +1,180 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for better diff analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          disallowScopes: |
+            release
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
+
+      - name: Check for breaking changes
+        run: |
+          # Check if this PR might contain breaking changes
+          if git diff --name-only origin/main...HEAD | grep -E "(src/types\.ts|src/registry\.ts|package\.json)" > /dev/null; then
+            echo "⚠️ This PR modifies core files that might contain breaking changes"
+            echo "Please ensure backward compatibility or update the version appropriately"
+          fi
+
+      - name: Analyze changed files
+        run: |
+          echo "📋 Files changed in this PR:"
+          git diff --name-only origin/main...HEAD
+
+          echo ""
+          echo "📊 Change statistics:"
+          git diff --stat origin/main...HEAD
+
+      - name: Check template integrity
+        run: |
+          # Verify that template changes don't break existing functionality
+          if git diff --name-only origin/main...HEAD | grep "templates/" > /dev/null; then
+            echo "🔍 Template changes detected, running integrity checks..."
+            
+            # Check that all hero templates still have required structure
+            for template in nextjs-fullstack express-fullstack react-spa-advanced; do
+              if [ -d "templates/$template" ]; then
+                echo "Checking $template structure..."
+                test -f "templates/$template/package.json" || (echo "❌ Missing package.json in $template" && exit 1)
+                
+                # Check for required directories based on template type
+                case $template in
+                  "nextjs-fullstack")
+                    test -d "templates/$template/src/components" || (echo "❌ Missing components dir in $template" && exit 1)
+                    test -d "templates/$template/src/app" || (echo "❌ Missing app dir in $template" && exit 1)
+                    ;;
+                  "express-fullstack")
+                    test -d "templates/$template/src/client" || (echo "❌ Missing client dir in $template" && exit 1)
+                    test -d "templates/$template/src/server" || (echo "❌ Missing server dir in $template" && exit 1)
+                    ;;
+                  "react-spa-advanced")
+                    test -d "templates/$template/src/components" || (echo "❌ Missing components dir in $template" && exit 1)
+                    test -d "templates/$template/src/pages" || (echo "❌ Missing pages dir in $template" && exit 1)
+                    ;;
+                esac
+                
+                echo "✅ $template structure is valid"
+              fi
+            done
+          fi
+
+  size-impact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build current branch
+        run: npm run build
+
+      - name: Calculate bundle size impact
+        run: |
+          # Calculate current build size
+          CURRENT_SIZE=$(du -sb dist/ | cut -f1)
+
+          # Checkout main and build
+          git checkout origin/main
+          npm ci
+          npm run build
+          MAIN_SIZE=$(du -sb dist/ | cut -f1)
+
+          # Calculate difference
+          SIZE_DIFF=$((CURRENT_SIZE - MAIN_SIZE))
+          SIZE_DIFF_KB=$((SIZE_DIFF / 1024))
+
+          echo "📦 Bundle size impact:"
+          echo "Main branch: $(numfmt --to=iec $MAIN_SIZE)"
+          echo "This PR: $(numfmt --to=iec $CURRENT_SIZE)"
+          echo "Difference: $(numfmt --to=iec $SIZE_DIFF) (${SIZE_DIFF_KB}KB)"
+
+          # Warn if size increase is significant
+          if [ $SIZE_DIFF_KB -gt 100 ]; then
+            echo "⚠️ This PR increases bundle size by more than 100KB"
+            echo "Please review if this increase is justified"
+          fi
+
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Check for new dependencies
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -E "(package\.json|package-lock\.json)" > /dev/null; then
+            echo "📦 Package changes detected"
+            
+            # Install and check for vulnerabilities
+            npm ci
+            
+            echo "🔍 Running security audit..."
+            npm audit --audit-level=moderate
+            
+            echo "📋 Checking for outdated dependencies..."
+            npm outdated || true
+            
+            echo "✅ Dependency check completed"
+          else
+            echo "ℹ️ No package changes detected"
+          fi
