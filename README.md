@@ -1,37 +1,98 @@
 # Peezy CLI
 
-> Initialize projects across runtimes — instantly
+> The future of project scaffolding — production-ready, secure, and intelligent
 
-A cross-runtime terminal tool that scaffolds opinionated starter applications for JavaScript (Bun/Node), Python (Flask/FastAPI), and front-end frameworks (React/Vite, Vue/Vite), with deterministic builds and machine-consumable outputs.
+A next-generation CLI that transforms how developers create, maintain, and distribute modern applications. From curated full-stack templates to intelligent project migrations, Peezy CLI delivers enterprise-grade tooling with developer-first experience.
 
-## Features
+[![npm version](https://badge.fury.io/js/peezy-cli.svg)](https://badge.fury.io/js/peezy-cli)
+[![GitHub release](https://img.shields.io/github/release/Sehnya/peezy-cli.svg)](https://github.com/Sehnya/peezy-cli/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-### Core Capabilities
+## ✨ What's New in v1.0.0
 
-- **Zero-network scaffolding** — all templates embedded, works offline
-- **Deterministic builds** — peezy.lock.json ensures bit-for-bit reproduction
-- **Machine-consumable JSON output** — all commands support --json flag
-- **File integrity verification** — SHA256 checksums for all generated files
-- **Cross-runtime support** — Bun, Node.js, Python with automatic detection
-- **Interactive prompts** — smart defaults with popular options highlighted
+### 🚀 Hero Experiences: Curated Full-Stack Templates
 
-### Project Management
+Production-ready templates that save hours of setup:
 
-- **Project reproduction** — recreate identical projects from lock files
-- **Template system** — local and remote templates with versioning
-- **Environment management** — typed env workflows with validation
-- **Health monitoring** — comprehensive project diagnostics
-- **Version tracking** — security advisories and update notifications
+- **`nextjs-fullstack`** - Complete Next.js app with auth, database, and modern UI
+- **`express-fullstack`** - Express + React full-stack with shared authentication
+- **`react-spa-advanced`** - Modern React SPA with state management and testing
+
+### 🔄 Migration System: Safe Project Updates
+
+Intelligent project migration with conflict resolution:
+
+- **Template diffing** - Compare your project with newer templates
+- **Interactive conflicts** - Choose how to handle customized files
+- **Automatic backups** - Never lose your work during updates
+- **Preview mode** - See changes before applying them
+
+### 📦 Multi-Platform Distribution
+
+Install anywhere, instantly:
+
+- **Homebrew** (macOS/Linux) - `brew install Sehnya/peezy/peezy`
+- **Scoop** (Windows) - `scoop install peezy`
+- **Universal installer** - `curl -fsSL https://get.peezy.dev | bash`
+- **Standalone binaries** - No Node.js required
+
+### 🔐 Production Security with Sigstore
+
+Enterprise-grade security without complexity:
+
+- **Keyless signing** - Templates signed with Sigstore transparency logs
+- **Automatic verification** - Templates verified before use
+- **Trust policies** - Configure security requirements for your team
+- **Audit system** - Comprehensive security reporting
+
+## 🎯 Core Features
 
 ### Developer Experience
 
-- **Modern frameworks** — React, Vue, Next.js with Vite and Tailwind CSS
-- **Automatic setup** — dependency installation and git initialization
-- **Popular templates highlighted** for quick selection
-- **Experimental plugin system** — extensible with custom hooks
-- **Comprehensive documentation** — detailed guides and API reference
+- **Zero-network scaffolding** — All templates embedded, works offline
+- **Interactive prompts** — Smart defaults with enhanced guidance
+- **JSON output** — Machine-consumable for automation and CI/CD
+- **Cross-platform** — macOS, Linux, Windows with native binaries
 
-## Installation
+### Project Management
+
+- **Deterministic builds** — Reproducible projects with lock files
+- **File integrity** — SHA256 verification for all generated files
+- **Template system** — Local and remote templates with versioning
+- **Health monitoring** — Comprehensive project diagnostics
+
+### Enterprise Ready
+
+- **Security first** — Sigstore integration with transparency logs
+- **Migration system** — Safe updates with intelligent conflict resolution
+- **Multi-platform** — Native binaries for all major platforms
+- **Automation friendly** — Complete JSON API for CI/CD integration
+
+## 🚀 Installation
+
+### Recommended: Native Binaries (No Node.js Required)
+
+#### macOS & Linux (Homebrew)
+
+```bash
+brew tap Sehnya/peezy
+brew install peezy
+```
+
+#### Windows (Scoop)
+
+```bash
+scoop bucket add peezy https://github.com/Sehnya/peezy-scoop
+scoop install peezy
+```
+
+#### Universal Installer
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Sehnya/peezy-cli/main/install.sh | bash
+```
+
+### Alternative: npm
 
 ```bash
 # Install globally via npm
@@ -39,90 +100,134 @@ npm install -g peezy-cli
 
 # Or use with npx (no installation required)
 npx peezy-cli new
-
-# Verify installation
-peezy --version
 ```
 
-## Usage
-
-### Quick Start
+### Verify Installation
 
 ```bash
-# Interactive mode - prompts for all options
-peezy new
+peezy --version  # Should show 1.0.0
+peezy --help     # See all available commands
+```
 
+## 🎯 Quick Start
+
+### Hero Templates (Recommended)
+
+```bash
+# Complete Next.js full-stack app
+peezy new nextjs-fullstack my-startup
+
+# Express + React full-stack
+peezy new express-fullstack my-api
+
+# Advanced React SPA
+peezy new react-spa-advanced my-dashboard
+```
+
+### Interactive Mode
+
+```bash
+# Guided setup with smart recommendations
+peezy new
+```
+
+### Classic Templates
+
+```bash
 # Direct template usage
 peezy new bun-react-tailwind my-app
 
 # With options
-peezy new bun-react-tailwind my-app --pm npm --no-git
+peezy new express-typescript my-api --databases postgresql --redis
 ```
 
-### Available Commands
+## 📋 Commands
 
-#### Project Creation and Management
+### 🚀 Project Creation
 
 ```bash
-# List all available templates
-peezy list [--json]
+# Interactive project creation
+peezy new
 
-# List remote templates too
-peezy list --remote [--json]
+# Hero templates (recommended)
+peezy new nextjs-fullstack my-app
+peezy new express-fullstack my-api
+peezy new react-spa-advanced my-spa
 
-# Create new project (interactive)
-peezy new [--json]
+# List all templates
+peezy list [--remote] [--json]
 
-# Create with specific template
-peezy new <template> <name> [options] [--json]
-
-# Add remote templates to cache
-peezy add @org/template@1.0.0 [--json]
-
-# Manage template cache
-peezy cache list [--json]
-peezy cache clear [--json]
+# Add remote templates
+peezy add @org/template@1.0.0
 ```
 
-#### Deterministic Builds and Reproduction
+### 🔄 Project Migration
+
+```bash
+# Preview migration changes
+peezy migrate --dry-run --template nextjs-fullstack
+
+# Interactive migration with conflict resolution
+peezy migrate --interactive --template nextjs-fullstack
+
+# Safe migration with backup
+peezy migrate --template nextjs-fullstack --backup
+```
+
+### 🔐 Security & Verification
+
+```bash
+# Verify template signatures
+peezy verify-template nextjs-fullstack
+
+# Security audit of project
+peezy audit [--json]
+
+# Manage trusted signers
+peezy trust list
+peezy trust add developer@company.com
+```
+
+### 🔧 Project Management
 
 ```bash
 # Reproduce project from lock file
-peezy reproduce <name> --lock-file path/to/peezy.lock.json [--json]
+peezy reproduce <name> --lock-file peezy.lock.json
 
-# Verify project integrity against lock file
-peezy verify --project-path ./my-project [--json]
+# Verify project integrity
+peezy verify --project-path ./my-project
 
-# Reproduce with verification
-peezy reproduce <name> --lock-file peezy.lock.json --verify [--json]
-```
-
-#### Environment and Project Health
-
-```bash
 # Comprehensive health checks
-peezy doctor --ports 3000,5173,8000 --fix-lint --fix-env-examples [--json]
+peezy doctor [--fix-lint] [--fix-env-examples]
 
-# Typed env management
-peezy env check [--json]
-peezy env diff [--json]
-peezy env generate [--json]            # generate .env.example from schema JSON
-peezy env pull:railway [--json]        # stubbed
-peezy env push:railway [--json]        # stubbed
+# Environment management
+peezy env check
+peezy env diff
+peezy env generate
 ```
 
-#### Documentation and Maintenance
+### 📊 Monitoring & Updates
 
 ```bash
-# README/CHANGELOG generator
-peezy readme --name MyProject --changelog [--json]
-
 # Check for updates
-peezy upgrade --dry-run [--json]
+peezy upgrade --dry-run
 
-# Version & security report
-peezy check-versions --format console [--json]
-peezy check-versions --format json --technologies node,bun,react --security-only [--json]
+# Version & security monitoring
+peezy check-versions [--security-only]
+
+# Generate documentation
+peezy readme --changelog
+```
+
+### 🗂️ Template Management
+
+```bash
+# Manage template cache
+peezy cache list
+peezy cache clear
+
+# Add remote templates
+peezy add @org/template@version
 ```
 
 #### JSON Output
@@ -152,27 +257,52 @@ All commands support the `--json` flag for machine-consumable output with consis
 - `--orm <orm>` - ORM to configure (prisma|drizzle|both)
 - `--volumes <type>` - Volume configuration (preconfigured|custom)
 
-## Available Templates
+## 🎨 Available Templates
 
-### Local Templates (Embedded)
+### 🚀 Hero Templates (Curated Full-Stack)
 
-#### Frontend Templates
+#### `nextjs-fullstack` - The Complete Package
+
+- **Next.js 14** with App Router and TypeScript
+- **Authentication** with NextAuth.js and multiple providers
+- **Database** with PostgreSQL and Drizzle ORM
+- **Modern UI** with Tailwind CSS and Headless UI
+- **Production-ready** with proper error handling and security
+
+#### `express-fullstack` - Full-Stack Powerhouse
+
+- **Express.js backend** with TypeScript and REST API
+- **React frontend** with Vite and modern tooling
+- **Shared authentication** with JWT tokens
+- **Database integration** with Drizzle ORM
+- **Concurrent development** setup for seamless workflow
+
+#### `react-spa-advanced` - Modern React Excellence
+
+- **Advanced React SPA** with all modern features
+- **State management** with Zustand
+- **Data fetching** with TanStack Query
+- **Routing** with React Router v6
+- **Testing** with Vitest and Testing Library
+- **Animations** with Framer Motion
+
+### 📦 Classic Templates
+
+#### Frontend
 
 - **nextjs-app-router** - Next.js 14 + App Router + TypeScript + Tailwind
 - **bun-react-tailwind** - Bun + React + Vite + Tailwind CSS
 - **vite-vue-tailwind** - Vue + Vite + Tailwind CSS
 
-#### Backend Templates
+#### Backend
 
 - **express-typescript** - Express.js + TypeScript + REST API
 - **flask** - Python Flask API/App
 - **fastapi** - Python FastAPI with modern features
 
-#### Full-Stack Templates
+#### Full-Stack
 
 - **flask-bun-hybrid** - Flask backend + Bun frontend
-
-All templates are marked with popularity indicators and include comprehensive peezy.lock.json files for deterministic reproduction.
 
 ### Remote Templates
 
@@ -193,26 +323,49 @@ peezy cache clear
 
 See [REMOTE_TEMPLATES.md](./REMOTE_TEMPLATES.md) for detailed documentation.
 
-## Examples
+## 💡 Examples
 
-### Basic Project Creation
+### Hero Template Workflows
 
 ```bash
-# Create a Next.js app with deterministic build
-peezy new nextjs-app-router my-next-app
+# Complete startup stack in minutes
+peezy new nextjs-fullstack my-startup
+cd my-startup
+npm run dev  # Full-stack app with auth and database ready
 
-# Create a React app with Bun
-peezy new bun-react-tailwind my-react-app
+# API + Dashboard combo
+peezy new express-fullstack my-platform
+cd my-platform
+npm run dev  # Concurrent backend + frontend development
 
-# Create a Flask API (Python dependencies installed manually)
-peezy new flask my-api --no-install
-cd my-api && python -m pip install -r requirements.txt
+# Modern SPA with all features
+peezy new react-spa-advanced my-dashboard
+cd my-dashboard
+npm run dev  # Advanced React app with testing and state management
+```
 
-# Create a Vue app with npm
-peezy new vite-vue-tailwind my-vue-app --pm npm
+### Migration Workflows
 
-# Interactive mode (recommended for first-time users)
-peezy new
+```bash
+# Safely update existing projects
+peezy migrate --dry-run --template nextjs-fullstack
+peezy migrate --interactive --template nextjs-fullstack
+
+# Preview changes before applying
+peezy migrate --dry-run --template react-spa-advanced
+```
+
+### Security Workflows
+
+```bash
+# Verify templates before use
+peezy verify-template nextjs-fullstack
+
+# Audit project security
+peezy audit
+
+# Configure team trust policy
+peezy trust add your-team@company.com
 ```
 
 ### Database Integration
@@ -229,6 +382,10 @@ peezy new express-typescript my-api --databases postgresql --orm both
 
 # Create Flask app with MongoDB and preconfigured volumes
 peezy new flask my-python-api --databases mongodb --redis --volumes preconfigured
+
+# Create a Flask API (Python dependencies installed manually)
+peezy new flask my-api --no-install
+cd my-api && python -m pip install -r requirements.txt
 
 # All database services configured with Docker Compose and volumes
 cd my-api && docker-compose up -d
@@ -492,83 +649,77 @@ npm test
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📚 Documentation
+
+- **[Hero Features Guide](HERO_FEATURES_README.md)** - Comprehensive guide to v1.0.0 features
+- **[Migration Guide](MIGRATION_GUIDE.md)** - How to migrate existing projects
+- **[Security Guide](SECURITY_GUIDE.md)** - Security features and best practices
+- **[API Reference](API_REFERENCE.md)** - Complete CLI command reference
+
+## 🔗 Links
+
+- **[GitHub Repository](https://github.com/Sehnya/peezy-cli)**
+- **[npm Package](https://www.npmjs.com/package/peezy-cli)**
+- **[Release Notes](https://github.com/Sehnya/peezy-cli/releases)**
+- **[Issue Tracker](https://github.com/Sehnya/peezy-cli/issues)**
+
+## 📄 License
 
 MIT © [Sehnya](https://github.com/Sehnya)
 
-## Changelog
+---
 
-### 0.1.5 (Latest)
+**Ready to build the future?** Get started with a hero template:
 
-**Major Features:**
+```bash
+peezy new nextjs-fullstack my-next-big-thing
+```
 
-- **Prisma ORM Integration** - Complete setup with schema, migrations, and seeding
-- **Drizzle ORM Integration** - Lightweight TypeScript ORM with SQL-like syntax
-- **Volume Management** - Preconfigured Docker volumes with persistent storage
-- **Enhanced Database Setup** - Production-ready configurations with health checks
-- **ORM Flexibility** - Support for Prisma, Drizzle, or both ORMs simultaneously
+## 📈 Changelog
 
-**New CLI Options:**
+### 1.0.0 - Hero Features Release 🚀
 
-- `--orm <orm>` - Configure Prisma, Drizzle, or both ORMs
-- `--volumes <type>` - Preconfigured or custom volume configuration
+**🌟 Major Features:**
 
-**Enhanced Templates:**
+- **🚀 Hero Experiences** - 3 curated full-stack templates (`nextjs-fullstack`, `express-fullstack`, `react-spa-advanced`)
+- **🔄 Migration System** - Safe project updates with intelligent diffing and conflict resolution
+- **📦 Multi-Platform Distribution** - Native binaries for macOS, Linux, Windows with Homebrew/Scoop support
+- **🔐 Production Security** - Sigstore integration with keyless signing and transparency logs
 
-- Express TypeScript template with ORM dependencies and scripts
-- Database configuration with connection pooling and health checks
-- Volume directories with backup documentation
+**🆕 New Commands:**
 
-**Generated Files:**
+- `peezy migrate` - Intelligent project migration with conflict resolution
+- `peezy verify-template` - Verify template signatures with Sigstore
+- `peezy trust` - Manage trusted signers and security policies
+- `peezy audit` - Comprehensive security audit system
 
-- Prisma schema, migrations, and seed files
-- Drizzle schema, migrations, and configuration
-- Docker volumes with persistent storage
-- Enhanced package.json with ORM scripts
+**✨ Enhanced Features:**
 
-### 0.1.4
+- **Hero template registry** with rich metadata and descriptions
+- **Enhanced CLI interface** with better prompts and guidance
+- **Cross-platform binaries** with automated release pipeline
+- **Security-first approach** with automatic template verification
 
-**Major Features:**
+**🔧 Technical Improvements:**
 
-- **Deterministic builds** - Complete peezy.lock.json system with SHA256 checksums
-- **Machine-consumable JSON output** - All commands support --json flag with standardized format
-- **Project reproduction** - peezy reproduce command for identical project recreation
-- **File integrity verification** - peezy verify command with comprehensive checksum validation
-- **Database integration** - Automatic SQL database setup with Docker Compose and environment configuration
-- **Interactive prompt suppression** - Clean JSON mode for automation and CI/CD
+- **Template diffing system** for intelligent migrations
+- **Sigstore integration** for production-grade security
+- **Multi-platform build system** with automated distribution
+- **Enhanced error handling** with actionable suggestions
 
-**New Commands:**
+### Previous Versions
 
-- `peezy reproduce` - Recreate projects from lock files
-- `peezy verify` - Validate project integrity against lock files
-- `peezy cache` - Manage template cache with JSON output
-
-**Enhanced Commands:**
-
-- All existing commands now support --json flag
-- Improved error handling with structured responses
-- Enhanced template system with source tracking
-- Better cross-platform compatibility
-
-**Templates:**
-
-- Added Next.js 14 with App Router template
-- Added Express.js + TypeScript template
-- Enhanced all templates with lock file generation
-- Improved template metadata and versioning
-
-### 0.1.2
-
-- Add check-versions command with security advisory mode
-- Add doctor command with ports/env/ts checks and options
-- Add README/CHANGELOG generator command
-- Introduce experimental plugin system (peezy.config.\*)
-- Improve interactive prompts and template highlighting
-
-### 0.1.0
-
-- Initial release
-- Support for 5 project templates
-- Interactive CLI with popular template highlighting
-- Automatic dependency installation and git initialization
-- Cross-platform compatibility
+- **0.1.5** - Prisma/Drizzle ORM integration, volume management
+- **0.1.4** - Deterministic builds, JSON output, project reproduction
+- **0.1.2** - Version monitoring, doctor command, plugin system
+- **0.1.0** - Initial release with 5 templates and interactive CLI

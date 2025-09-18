@@ -89,6 +89,11 @@ describe("Documentation Validation", () => {
   describe("CLI Examples Validation", () => {
     test("all CLI examples should use valid template names", () => {
       const validTemplates = [
+        // Hero templates
+        "nextjs-fullstack",
+        "express-fullstack",
+        "react-spa-advanced",
+        // Classic templates
         "nextjs-app-router",
         "express-typescript",
         "bun-react-tailwind",
@@ -136,8 +141,15 @@ describe("Documentation Validation", () => {
         "--search",
         "--orm",
         "--volumes",
+        "--help",
+        "--backup",
+        "--interactive",
+        "--template",
+        "--signature",
       ];
-      const flagMatches = readmeContent.match(/--[\w-]+/g);
+      const flagMatches = readmeContent
+        .match(/--[\w-]+/g)
+        ?.filter((flag) => flag !== "---");
 
       if (flagMatches) {
         flagMatches.forEach((flag) => {

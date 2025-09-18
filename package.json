@@ -1,7 +1,7 @@
 {
   "name": "peezy-cli",
   "version": "1.0.0",
-  "description": "Initialize projects across runtimes with deterministic builds, database integration, and ORM support — instantly.",
+  "description": "Production-ready CLI for scaffolding modern applications with curated full-stack templates, intelligent migrations, and enterprise security.",
   "type": "module",
   "bin": {
     "peezy": "bin/peezy.mjs"
@@ -33,6 +33,14 @@
     "cli",
     "scaffold",
     "template",
+    "fullstack",
+    "nextjs",
+    "react",
+    "express",
+    "typescript",
+    "migration",
+    "security",
+    "sigstore",
     "deterministic",
     "reproducible",
     "json-output",
@@ -42,16 +50,16 @@
     "drizzle",
     "docker",
     "volumes",
-    "react",
     "vue",
-    "nextjs",
     "flask",
     "fastapi",
     "bun",
     "vite",
     "tailwind",
     "lock-file",
-    "integrity"
+    "integrity",
+    "enterprise",
+    "production-ready"
   ],
   "author": "Sehnya",
   "license": "MIT",

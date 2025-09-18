@@ -31,7 +31,7 @@ export const migrateCommand = new Command("migrate")
         });
       }
     } catch (error) {
-      log.error(
+      log.err(
         `Migration failed: ${error instanceof Error ? error.message : String(error)}`
       );
       process.exit(1);

@@ -132,12 +132,12 @@ export class MigrationService {
     }
 
     // Apply changes
-    await this.applyChanges(preview.changes, options.force);
+    await this.applyChanges(preview.changes, options.force || false);
 
     // Update lock file
     await this.updateLockFile(preview.summary.templateChange);
 
-    log.success(`✅ Migration completed successfully!`);
+    log.ok(`✅ Migration completed successfully!`);
     log.info(
       `📊 Summary: ${preview.summary.filesAdded} added, ${preview.summary.filesModified} modified, ${preview.summary.filesDeleted} deleted`
     );
