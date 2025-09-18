@@ -643,7 +643,7 @@ ALTER TABLE "posts" ADD CONSTRAINT "posts_authorId_fkey" FOREIGN KEY ("authorId"
 function generateDrizzleMigration(db: DatabaseConfig): string {
   return `import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/${db.type === "postgresql" ? "node-postgres" : db.type === "mysql" ? "mysql2" : "better-sqlite3"}/migrator';
-import { db } from '../config/database';
+import { db } from '../config/database.js';
 
 async function runMigrations() {
   console.log('Running migrations...');
@@ -723,8 +723,8 @@ main()
  * Generate Drizzle seeder
  */
 function generateDrizzleSeeder(db: DatabaseConfig): string {
-  return `import { db } from '../config/database';
-import { users, posts } from '../schema/schema';
+  return `import { db } from '../config/database.js';
+import { users, posts } from '../schema/schema.js';
 
 async function main() {
   console.log('Seeding database...');

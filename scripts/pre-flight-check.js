@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.join(__dirname, "..");
 
 async function preFlightCheck() {
-  console.log("🚀 Peezy CLI v1.0.0 Pre-Flight Check\n");
+  console.log("🚀 Peezy CLI v1.0.2 Pre-Flight Check\n");
 
   let allGood = true;
 
@@ -20,11 +20,11 @@ async function preFlightCheck() {
       await fs.readFile(path.join(rootDir, "package.json"), "utf-8")
     );
 
-    if (packageJson.version === "1.0.0") {
-      console.log("   ✅ package.json version: 1.0.0");
+    if (packageJson.version === "1.0.2") {
+      console.log("   ✅ package.json version: 1.0.2");
     } else {
       console.log(
-        `   ❌ package.json version: ${packageJson.version} (should be 1.0.0)`
+        `   ❌ package.json version: ${packageJson.version} (should be 1.0.2)`
       );
       allGood = false;
     }
@@ -33,8 +33,8 @@ async function preFlightCheck() {
       path.join(rootDir, "src/index.ts"),
       "utf-8"
     );
-    if (indexContent.includes('.version("1.0.0")')) {
-      console.log("   ✅ CLI version string: 1.0.0");
+    if (indexContent.includes('.version("1.0.2")')) {
+      console.log("   ✅ CLI version string: 1.0.2");
     } else {
       console.log("   ❌ CLI version string not updated");
       allGood = false;
@@ -134,7 +134,7 @@ async function preFlightCheck() {
     // Check 7: Documentation
     console.log("\n7️⃣ Checking documentation...");
     const docFiles = [
-      "RELEASE_NOTES_1.0.0.md",
+      "RELEASE_NOTES_1.0.2.md",
       "HERO_FEATURES_README.md",
       "SETUP_SUMMARY.md",
       "RELEASE_CHECKLIST_1.0.0.md",
@@ -178,11 +178,11 @@ async function preFlightCheck() {
     console.log("\n" + "=".repeat(50));
     if (allGood) {
       console.log("🎉 PRE-FLIGHT CHECK PASSED!");
-      console.log("\n✅ Ready for v1.0.0 release!");
+      console.log("\n✅ Ready for v1.0.2 release!");
       console.log("\nNext steps:");
       console.log("1. Commit any final changes");
-      console.log('2. Run: git tag -a v1.0.0 -m "Release v1.0.0"');
-      console.log("3. Run: git push origin v1.0.0");
+      console.log('2. Run: git tag -a v1.0.2 -m "Release v1.0.2"');
+      console.log("3. Run: git push origin v1.0.2");
       console.log("4. Monitor GitHub Actions");
       console.log("5. Celebrate! 🎊");
     } else {
