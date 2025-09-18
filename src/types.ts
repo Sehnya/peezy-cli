@@ -14,12 +14,25 @@ export interface NewOptions {
   includeSearch?: boolean;
   orm?: "prisma" | "drizzle" | "both";
   volumes?: "preconfigured" | "custom";
+  auth?: {
+    provider: "nextauth" | "supabase" | "auth0" | "jwt";
+    features?: {
+      oauth?: boolean;
+      emailPassword?: boolean;
+      magicLink?: boolean;
+      phoneAuth?: boolean;
+    };
+    providers?: string[];
+  };
 }
 
 export interface TemplateDefinition {
   title: string;
   path: string;
   popular?: boolean;
+  hero?: boolean;
+  description?: string;
+  tags?: string[];
 }
 
 export interface TemplateRegistry {
@@ -88,6 +101,7 @@ export interface PeezyLockFile {
     source: TemplateSource;
     commit?: string;
     engine: "tar" | "git" | "dir";
+    signature?: TemplateSignatureInfo;
   };
   plugins?: PluginLock[];
   options: {
@@ -98,6 +112,30 @@ export interface PeezyLockFile {
   checksums: {
     files: Record<string, string>;
   };
+  security?: {
+    trustPolicy?: TrustPolicyInfo;
+    verifiedAt?: string;
+  };
+}
+
+export interface TemplateSignatureInfo {
+  signer: string;
+  digest: string;
+  timestamp: string;
+  verified: boolean;
+  verifiedAt?: string;
+  certificate?: {
+    subject: string;
+    issuer: string;
+    notBefore: string;
+    notAfter: string;
+  };
+}
+
+export interface TrustPolicyInfo {
+  requireSignatures: boolean;
+  allowUnsigned: boolean;
+  trustedSigners: string[];
 }
 
 export interface TemplateSource {

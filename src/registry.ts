@@ -14,9 +14,46 @@ const templatePath = (name: string): string =>
 
 /**
  * Local template registry with embedded templates
- * Popular templates are marked for UI prioritization
+ * Hero templates are marked as popular for UI prioritization
  */
 export const localRegistry: TemplateRegistry = {
+  // Hero Experiences - Curated Full-Stack Templates
+  "nextjs-fullstack": {
+    title: "🚀 Next.js Full-Stack + Auth + Database",
+    path: templatePath("nextjs-fullstack"),
+    popular: true,
+    hero: true,
+    description:
+      "Complete Next.js 14 app with authentication, database, and modern UI",
+    tags: [
+      "nextjs",
+      "react",
+      "typescript",
+      "tailwind",
+      "auth",
+      "database",
+      "drizzle",
+    ],
+  },
+  "express-fullstack": {
+    title: "🚀 Express + React Full-Stack",
+    path: templatePath("express-fullstack"),
+    popular: true,
+    hero: true,
+    description:
+      "Express.js backend with React frontend, authentication, and database",
+    tags: ["express", "react", "typescript", "api", "auth", "database"],
+  },
+  "react-spa-advanced": {
+    title: "🚀 React SPA + Advanced Features",
+    path: templatePath("react-spa-advanced"),
+    popular: true,
+    hero: true,
+    description: "Modern React SPA with routing, state management, and testing",
+    tags: ["react", "spa", "typescript", "tailwind", "testing", "routing"],
+  },
+
+  // Existing Templates
   "nextjs-app-router": {
     title: "Next.js 14 + App Router + TypeScript + Tailwind",
     path: templatePath("nextjs-app-router"),

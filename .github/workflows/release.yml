@@ -4,24 +4,24 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
-  release:
+  build-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
+      id-token: write # Required for Sigstore signing
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "20"
           cache: "npm"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: npm ci
@@ -29,70 +29,82 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build project
+      - name: Build TypeScript
         run: npm run build
 
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Install pkg globally
+        run: npm install -g pkg
 
-      - name: Update package.json version
-        run: npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
+      - name: Build binaries
+        run: npm run build:binaries
 
-      - name: Create release notes
-        id: release_notes
-        run: |
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
-          echo "## What's Changed in v${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### Features" >> $GITHUB_OUTPUT
-          echo "- Check the commit history for detailed changes" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### Bug Fixes" >> $GITHUB_OUTPUT
-          echo "- Various improvements and bug fixes" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### Installation" >> $GITHUB_OUTPUT
-          echo "\`\`\`bash" >> $GITHUB_OUTPUT
-          echo "npm install -g peezy-cli@${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
-          echo "\`\`\`" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Update distribution files
+        run: npm run update:distribution
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sign binaries with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v2.1.1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release v${{ steps.version.outputs.VERSION }}
-          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+          inputs: |
+            dist-binaries/*.tar.gz
+            dist-binaries/*.zip
+          upload-signing-artifacts: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist-binaries/*.tar.gz
+            dist-binaries/*.zip
+            dist-binaries/checksums.txt
+            install.sh
+            distribution.tar.gz
+          generate_release_notes: true
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+
+      - name: Commit updated distribution files
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add homebrew/peezy.rb scoop/peezy.json install.sh
+          git diff --staged --quiet || git commit -m "Update distribution files for ${{ github.ref_name }}"
+          git push origin HEAD:main || echo "No changes to push"
+
+      - name: Create distribution archive
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p distribution
+          cp homebrew/peezy.rb distribution/
+          cp scoop/peezy.json distribution/
+          cp install.sh distribution/
+          tar -czf distribution.tar.gz distribution/
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    needs: build-and-release
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'alpha')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Publish to npm
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  post-release:
-    runs-on: ubuntu-latest
-    needs: release
-    steps:
-      - name: Create post-release issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const version = context.ref.replace('refs/tags/v', '');
-
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Post-release tasks for v${version}`,
-              body: `## Post-release checklist for v${version}
-              
-              - [ ] Verify npm package is published correctly
-              - [ ] Test installation: \`npm install -g peezy-cli@${version}\`
-              - [ ] Monitor for any immediate issues
-              
-              **Release URL:** https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/v${version}`,
-              labels: ['release', 'maintenance']
-            });
+        continue-on-error: true

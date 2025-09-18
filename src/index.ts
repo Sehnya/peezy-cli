@@ -17,6 +17,12 @@ import {
   outputJson,
   OutputCapture,
 } from "./utils/json-output.js";
+import {
+  createVerifyCommand,
+  createTrustCommand,
+  createAuditCommand,
+} from "./commands/security.js";
+import { migrateCommand } from "./commands/migrate.js";
 import type { NewOptions, TemplateKey, PackageManager } from "./types.js";
 
 const program = new Command();
@@ -24,7 +30,7 @@ const program = new Command();
 program
   .name("peezy")
   .description("Initialize projects across runtimes — instantly")
-  .version("0.1.5");
+  .version("1.0.0");
 
 /**
  * List command - show all available templates
@@ -207,98 +213,20 @@ program
       let answers: any = {};
 
       if (!opts?.json) {
-        answers = await prompts(
-          [
-            {
-              type: templateArg ? null : "select",
-              name: "template",
-              message: "Choose a template:",
-              choices: orderedTemplates.map((key) => {
-                const template = registry[key];
-                const title = template.popular
-                  ? `⭐ ${key} — ${template.title}`
-                  : `  ${key} — ${template.title}`;
-                return { title, value: key };
-              }),
-              initial: 0,
-            },
-            {
-              type: nameArg ? null : "text",
-              name: "name",
-              message: "Project name:",
-              initial: "my-app",
-              validate: (value: string) => {
-                if (!value || value.trim().length === 0) {
-                  return "Project name is required";
-                }
-                if (value.length > 214) {
-                  return "Project name must be less than 214 characters";
-                }
-                // Check for reserved names first
-                const reserved = [
-                  "node_modules",
-                  "package.json",
-                  "package-lock.json",
-                  ".git",
-                  ".env",
-                ];
-                if (reserved.includes(value.toLowerCase())) {
-                  return `"${value}" is a reserved name and cannot be used`;
-                }
-                if (value.startsWith(".")) {
-                  return "Project name cannot start with a dot";
-                }
-                if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-                  return "Project name can only contain letters, numbers, hyphens, and underscores";
-                }
-                if (value.startsWith("-") || value.endsWith("-")) {
-                  return "Project name cannot start or end with hyphens";
-                }
-                return true;
-              },
-            },
-            {
-              type: opts?.pm ? null : "select",
-              name: "pm",
-              message: "Package manager:",
-              choices: [
-                { title: "⭐ bun", value: "bun" },
-                { title: "  npm", value: "npm" },
-                { title: "  pnpm", value: "pnpm" },
-                { title: "  yarn", value: "yarn" },
-              ],
-              initial: 0,
-            },
-            {
-              type: typeof opts?.install === "boolean" ? null : "toggle",
-              name: "install",
-              message: "Install dependencies?",
-              initial: true,
-              active: "yes",
-              inactive: "no",
-            },
-            {
-              type: typeof opts?.git === "boolean" ? null : "toggle",
-              name: "git",
-              message: "Initialize git repository?",
-              initial: true,
-              active: "yes",
-              inactive: "no",
-            },
-          ],
-          {
-            onCancel: () => {
-              log.warn("Operation cancelled");
-              process.exit(0);
-            },
-          }
+        const { getEnhancedProjectConfig, showConfigSummary } = await import(
+          "./utils/enhanced-prompts.js"
         );
+        answers = await getEnhancedProjectConfig(templateArg, nameArg, opts);
       }
 
       // Parse database options
       const databases = opts?.databases
         ? opts.databases.split(",").map((db: string) => db.trim())
-        : undefined;
+        : answers.databases
+          ? typeof answers.databases === "string"
+            ? answers.databases.split(",").map((db: string) => db.trim())
+            : answers.databases
+          : undefined;
 
       // Merge arguments and prompt answers
       const config: NewOptions = {
@@ -308,12 +236,21 @@ program
         install: opts?.install ?? answers.install ?? true, // Default to true in JSON mode
         git: opts?.git ?? answers.git ?? true, // Default to true in JSON mode
         databases,
-        includeRedis: opts?.redis,
+        includeRedis: opts?.redis ?? answers.includeRedis,
         includeSearch: opts?.search,
-        orm: opts?.orm as "prisma" | "drizzle" | "both",
-        volumes: opts?.volumes as "preconfigured" | "custom",
+        orm: opts?.orm ?? (answers.orm as "prisma" | "drizzle" | "both"),
+        volumes:
+          opts?.volumes ?? (answers.volumes as "preconfigured" | "custom"),
         json: opts?.json,
       };
+
+      // Show configuration summary for interactive mode
+      if (!opts?.json && Object.keys(answers).length > 0) {
+        const { showConfigSummary } = await import(
+          "./utils/enhanced-prompts.js"
+        );
+        showConfigSummary(config);
+      }
 
       // Validate required fields
       if (!config.template || !config.name) {
@@ -435,25 +372,42 @@ program
         }
       }
 
-      // Show next steps
-      console.log();
-      log.info("Next steps:");
-      console.log(`  cd ${config.name}`);
+      // Show educational next steps
+      if (!opts?.json) {
+        const { showEducationalNextSteps } = await import(
+          "./utils/enhanced-prompts.js"
+        );
+        showEducationalNextSteps(config);
+      } else {
+        // Show basic next steps for JSON mode
+        console.log();
+        log.info("Next steps:");
+        console.log(`  cd ${config.name}`);
 
-      const devCommand =
-        config.pm === "bun"
-          ? "bun run dev"
-          : config.pm === "yarn"
-            ? "yarn dev"
-            : config.pm === "pnpm"
-              ? "pnpm dev"
-              : "npm run dev";
-      console.log(`  ${devCommand}`);
-      console.log();
+        const devCommand =
+          config.pm === "bun"
+            ? "bun run dev"
+            : config.pm === "yarn"
+              ? "yarn dev"
+              : config.pm === "pnpm"
+                ? "pnpm dev"
+                : "npm run dev";
+        console.log(`  ${devCommand}`);
+        console.log();
+      }
 
       // Handle JSON output
       if (opts?.json) {
         const { warnings, errors } = outputCapture.stop();
+        const devCommand =
+          config.pm === "bun"
+            ? "bun run dev"
+            : config.pm === "yarn"
+              ? "yarn dev"
+              : config.pm === "pnpm"
+                ? "pnpm dev"
+                : "npm run dev";
+
         const output = createSuccessOutput(
           {
             project: {
@@ -1024,6 +978,14 @@ program
       }
     }
   });
+
+// Add security commands
+program.addCommand(createVerifyCommand().name("verify-template"));
+program.addCommand(createTrustCommand());
+program.addCommand(createAuditCommand());
+
+// Add migration command
+program.addCommand(migrateCommand);
 
 // Parse command line arguments
 await program.parseAsync(process.argv).catch((error) => {

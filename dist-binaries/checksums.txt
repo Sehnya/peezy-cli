@@ -1,0 +1,2 @@
+abc123  peezy-macos-arm64.tar.gz
+def456  peezy-macos-x64.tar.gz
