@@ -89,6 +89,8 @@ describe("Documentation Validation", () => {
   describe("CLI Examples Validation", () => {
     test("all CLI examples should use valid template names", () => {
       const validTemplates = [
+        "nextjs-app-router",
+        "express-typescript",
         "bun-react-tailwind",
         "vite-vue-tailwind",
         "flask",
@@ -122,6 +124,13 @@ describe("Documentation Validation", () => {
         "--security-only",
         "--no-badges",
         "--schema",
+        "--json",
+        "--lock-file",
+        "--verify",
+        "--project-path",
+        "--force",
+        "--version",
+        "--remote",
       ];
       const flagMatches = readmeContent.match(/--[\w-]+/g);
 

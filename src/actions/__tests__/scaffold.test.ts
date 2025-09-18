@@ -6,6 +6,7 @@ import * as fsx from "../../utils/fsx";
 // Mock dependencies
 jest.mock("node:fs");
 jest.mock("../../utils/fsx");
+jest.mock("../../utils/lock-file");
 jest.mock("../../registry", () => ({
   resolveTemplate: jest.fn(),
   registry: {
@@ -20,8 +21,9 @@ jest.mock("../../registry", () => ({
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockFsx = fsx as jest.Mocked<typeof fsx>;
 
-// Import the mocked registry
+// Import the mocked registry and lock file
 const mockRegistry = require("../../registry");
+const mockLockFile = require("../../utils/lock-file");
 
 describe("scaffold", () => {
   beforeEach(() => {
@@ -48,6 +50,22 @@ describe("scaffold", () => {
     mockFsx.sanitizePackageName.mockImplementation((name) =>
       name.toLowerCase()
     );
+
+    // Mock lock file creation
+    mockLockFile.createLockFile.mockResolvedValue({
+      $schema: "https://peezy.dev/schemas/peezy.lock.schema.json",
+      peezyVersion: "0.1.3",
+      formatVersion: 1,
+      project: { name: "my-app", createdAt: "2025-01-01T00:00:00.000Z" },
+      template: {
+        name: "bun-react-tailwind",
+        version: "latest",
+        source: { type: "local", path: "/mock/templates/bun-react-tailwind" },
+        engine: "dir",
+      },
+      options: { flags: { installDeps: true, initGit: true }, answers: {} },
+      checksums: { files: {} },
+    });
   });
 
   it("should scaffold a project successfully", async () => {
@@ -69,7 +87,9 @@ describe("scaffold", () => {
       }
     );
 
-    expect(result).toContain("my-app");
+    expect(mockLockFile.createLockFile).toHaveBeenCalled();
+    expect(result.projectPath).toContain("my-app");
+    expect(result.templateInfo.name).toBe("bun-react-tailwind");
   });
 
   it("should throw error for unknown template", async () => {

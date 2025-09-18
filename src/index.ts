@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name("peezy")
   .description("Initialize projects across runtimes — instantly")
-  .version("0.1.0");
+  .version("0.1.4");
 
 /**
  * List command - show all available templates
@@ -700,7 +700,7 @@ program
 
     try {
       const { addTemplate } = await import("./commands/add.js");
-      const result = await addTemplate(templateName, {
+      await addTemplate(templateName, {
         force: options.force,
         version: options.version,
       });
@@ -711,7 +711,6 @@ program
           {
             template: templateName,
             cached: true,
-            path: result?.path,
           },
           warnings
         );
@@ -1005,7 +1004,7 @@ program
   });
 
 // Parse command line arguments
-program.parseAsync(process.argv).catch((error) => {
+await program.parseAsync(process.argv).catch((error) => {
   log.err(`CLI error: ${error.message}`);
   process.exit(1);
 });

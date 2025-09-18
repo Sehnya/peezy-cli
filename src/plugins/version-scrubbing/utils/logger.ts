@@ -3,6 +3,7 @@
  */
 
 export interface LogLevel {
+  SILENT: -1;
   ERROR: 0;
   WARN: 1;
   INFO: 2;
@@ -10,6 +11,7 @@ export interface LogLevel {
 }
 
 const LOG_LEVELS: LogLevel = {
+  SILENT: -1,
   ERROR: 0,
   WARN: 1,
   INFO: 2,
@@ -26,9 +28,12 @@ class Logger {
   }
 
   private log(level: keyof LogLevel, message: string, ...args: any[]) {
+    // If configured SILENT, never log
+    if (this.level < 0) return;
+
     if (LOG_LEVELS[level] <= this.level) {
       const timestamp = new Date().toISOString();
-      const levelStr = level.padEnd(5);
+      const levelStr = level.padEnd(6);
       console.log(
         `${timestamp} ${levelStr} ${this.prefix} ${message}`,
         ...args
@@ -58,6 +63,8 @@ class Logger {
 }
 
 // Create default logger instance
-export const logger = new Logger(
-  (process.env.LOG_LEVEL as keyof LogLevel) || "INFO"
-);
+const resolvedDefaultLevel: keyof LogLevel =
+  (process.env.LOG_LEVEL as keyof LogLevel) ||
+  (process.env.NODE_ENV === "test" ? "SILENT" : "WARN");
+
+export const logger = new Logger(resolvedDefaultLevel);

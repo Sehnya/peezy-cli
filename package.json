@@ -1,7 +1,7 @@
 {
   "name": "peezy-cli",
-  "version": "0.1.3",
-  "description": "Initialize projects across runtimes (Bun/Node, Flask/FastAPI, React/Vue) — instantly.",
+  "version": "0.1.4",
+  "description": "Initialize projects across runtimes with deterministic builds and machine-consumable outputs — instantly.",
   "type": "module",
   "bin": {
     "peezy": "bin/peezy.mjs"
@@ -28,13 +28,19 @@
     "cli",
     "scaffold",
     "template",
+    "deterministic",
+    "reproducible",
+    "json-output",
     "react",
     "vue",
+    "nextjs",
     "flask",
     "fastapi",
     "bun",
     "vite",
-    "tailwind"
+    "tailwind",
+    "lock-file",
+    "integrity"
   ],
   "author": "Sehnya",
   "license": "MIT",
