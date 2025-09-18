@@ -50,7 +50,7 @@ Every scaffolded project now includes a `peezy.lock.json` file with:
 ```json
 {
   "$schema": "https://peezy.dev/schemas/peezy.lock.schema.json",
-  "peezyVersion": "0.1.3",
+  "peezyVersion": "0.1.4",
   "formatVersion": 1,
   "project": {
     "name": "my-app",
@@ -188,7 +188,7 @@ peezy verify --project-path test-copy
 peezy list --json | jq '.data.templates[].name'
 
 # Create project and capture metadata
-peezy new react my-app --json | jq '.data.project.path'
+peezy new bun-react-tailwind my-app --json | jq '.data.project.path'
 
 # Check environment status
 peezy env check --json | jq '.data.valid'

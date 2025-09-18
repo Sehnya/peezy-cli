@@ -72,10 +72,12 @@ export async function scaffold(
       path: resolved.isRemote ? undefined : templatePath,
     };
 
-    // For remote templates, we need to get additional info
-    if (resolved.isRemote && resolved.templateInfo) {
-      templateInfo.resolvedUrl = resolved.templateInfo.resolvedUrl;
-      templateInfo.integrity = resolved.templateInfo.integrity;
+    // For remote templates, we would need additional info from the registry
+    // This will be implemented when remote template metadata is available
+    if (resolved.isRemote) {
+      // TODO: Get resolvedUrl and integrity from remote registry
+      templateInfo.resolvedUrl = undefined;
+      templateInfo.integrity = undefined;
     }
   } catch (error) {
     throw new Error(

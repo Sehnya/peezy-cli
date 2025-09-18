@@ -20,7 +20,7 @@ export function createSuccessOutput<T>(
     ok: true,
     data,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.3",
+    version: process.env.npm_package_version || "0.1.4",
   };
 }
 
@@ -35,7 +35,7 @@ export function createErrorOutput(
     ok: false,
     errors,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.3",
+    version: process.env.npm_package_version || "0.1.4",
   };
 }
 
@@ -43,8 +43,11 @@ export function createErrorOutput(
  * Output JSON to stdout and exit with appropriate code
  */
 export function outputJson(output: JsonOutput): void {
-  console.log(JSON.stringify(output, null, 2));
-  process.exit(output.ok ? 0 : 1);
+  const json = JSON.stringify(output, null, 2);
+  // Write synchronously to avoid truncation and let Node exit naturally.
+  process.stdout.write(json + "\n");
+  // Set exit code but do not force immediate exit to avoid losing buffered output in some environments (e.g., Jest execSync).
+  process.exitCode = output.ok ? 0 : 1;
 }
 
 /**

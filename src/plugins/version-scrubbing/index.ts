@@ -16,6 +16,8 @@ import {
 import { VersionMonitoringService } from "./services/version-monitoring.js";
 import { PluginConfig, loadConfig } from "./config/plugin-config.js";
 import { logger } from "./utils/logger.js";
+import { uniqueNormalizedTechs } from "./utils/tech-list.js";
+import { normalizeTech } from "./utils/normalize-tech.js";
 
 class VersionScrubbingServer {
   private server: Server;
@@ -159,16 +161,20 @@ class VersionScrubbingServer {
   }
 
   private async handleCheckVersions(args: any) {
-    const technologies =
+    const allDetectedTechs =
       args?.technologies ||
       this.config.monitoring.runtimes.concat(
         this.config.monitoring.frameworks,
         this.config.monitoring.packages
       );
+
+    // Normalize first, then de‑dupe
+    const techsToCheck = uniqueNormalizedTechs(allDetectedTechs, normalizeTech);
+
     const includePrerelease = args?.includePrerelease || false;
 
     const results = await this.versionService.checkVersions(
-      technologies,
+      techsToCheck,
       includePrerelease
     );
 

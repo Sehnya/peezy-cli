@@ -83,3 +83,21 @@ export async function clearCache(): Promise<void> {
     );
   }
 }
+
+/**
+ * Get cache information for JSON output
+ */
+export async function getCacheInfo(): Promise<{
+  size: number;
+  templates: number;
+  lastFetch: Date | null;
+}> {
+  try {
+    const registry = getRemoteRegistry();
+    return registry.getCacheInfo();
+  } catch (error) {
+    throw new Error(
+      `Failed to get cache info: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}

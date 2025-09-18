@@ -2,7 +2,7 @@
 
 This document outlines the planned features and improvements for Peezy CLI. The roadmap is organized by release milestones and priority levels.
 
-## 🎯 Current Version: v0.1.3
+## 🎯 Current Version: v0.1.4
 
 ### ✅ Completed Features
 

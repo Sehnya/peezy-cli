@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "strict": true,
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "noEmitOnError": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/__tests__/**"]
