@@ -11,24 +11,22 @@
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Maintenance (dependency updates, code cleanup, etc.)
-- [ ] 🎨 Style/formatting changes
+- [ ] � Documientation update
+- [ ] 🔧 Refactoring (no functional changes)
+- [ ] 🎨 Style changes (formatting, missing semi colons, etc)
 - [ ] ⚡ Performance improvement
-- [ ] 🔒 Security fix
-- [ ] 📋 Template addition/modification
-- [ ] 🔄 Version update
+- [ ] 🧪 Test changes
+- [ ] 🔨 Build/CI changes
 
 ## Related Issues
 
-<!-- Link to related issues using "Fixes #123" or "Closes #123" -->
+<!-- Link to any related issues -->
 
-- Fixes #
-- Related to #
+Fixes #(issue number)
 
 ## Changes Made
 
-<!-- Describe the specific changes made in this PR -->
+<!-- List the main changes made in this PR -->
 
 -
 -
@@ -38,56 +36,55 @@
 
 <!-- Describe how you tested these changes -->
 
-- [ ] Unit tests pass
-- [ ] Integration tests pass
+- [ ] All existing tests pass
+- [ ] New tests added for new functionality
 - [ ] Manual testing completed
-- [ ] Template generation tested (if applicable)
-- [ ] CLI functionality verified
+- [ ] Cross-platform testing (if applicable)
 
 ### Test Commands Run
 
 ```bash
-# List the commands you ran to test your changes
 npm test
 npm run build
-peezy create test-app
+npm run pre-flight
 ```
 
-## Screenshots/Output
+## Template Changes (if applicable)
 
-<!-- If applicable, add screenshots or command output -->
+<!-- If you modified templates, describe the changes -->
+
+- [ ] Hero templates structure maintained
+- [ ] All required directories present (components/, pages/, public/)
+- [ ] Template functionality tested
+- [ ] Documentation updated
 
 ## Breaking Changes
 
-<!-- If this is a breaking change, describe what breaks and how to migrate -->
+<!-- If this introduces breaking changes, describe them -->
 
-- [ ] This PR introduces breaking changes
-- [ ] Migration guide provided (if applicable)
+- [ ] No breaking changes
+- [ ] Breaking changes documented below
+
+### Breaking Change Details
+
+<!-- Describe any breaking changes and migration path -->
 
 ## Checklist
 
 <!-- Mark completed items with an "x" -->
 
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+- [ ] Code follows the project's style guidelines
+- [ ] Self-review of code completed
+- [ ] Code is commented, particularly in hard-to-understand areas
+- [ ] Corresponding changes to documentation made
+- [ ] Changes generate no new warnings
+- [ ] New and existing unit tests pass locally
 - [ ] Any dependent changes have been merged and published
+
+## Screenshots (if applicable)
+
+<!-- Add screenshots to help explain your changes -->
 
 ## Additional Notes
 
-<!-- Add any additional notes, concerns, or context for reviewers -->
-
-## Reviewer Guidelines
-
-<!-- For reviewers -->
-
-- [ ] Code quality and style
-- [ ] Test coverage
-- [ ] Documentation updates
-- [ ] Breaking change impact
-- [ ] Performance implications
-- [ ] Security considerations
+<!-- Any additional information that reviewers should know -->

@@ -1,0 +1,25 @@
+# Global code owners
+* @Sehnya
+
+# Core system files require extra review
+/src/types.ts @Sehnya
+/src/registry.ts @Sehnya
+/src/index.ts @Sehnya
+/package.json @Sehnya
+
+# Security-related files
+/src/security/ @Sehnya
+/.github/workflows/ @Sehnya
+
+# Template files - require review for consistency
+/templates/ @Sehnya
+
+# Documentation
+/README.md @Sehnya
+/CONTRIBUTING.md @Sehnya
+/*.md @Sehnya
+
+# Release and distribution
+/scripts/ @Sehnya
+/homebrew/ @Sehnya
+/scoop/ @Sehnya

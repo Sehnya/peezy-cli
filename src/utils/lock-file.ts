@@ -98,7 +98,7 @@ export async function createLockFile(
 ): Promise<PeezyLockFile> {
   const lockFile: PeezyLockFile = {
     $schema: SCHEMA_URL,
-    peezyVersion: process.env.npm_package_version || "0.1.4",
+    peezyVersion: process.env.npm_package_version || "0.1.5",
     formatVersion: 1,
     project: {
       name: options.name || "unknown",
