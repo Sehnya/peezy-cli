@@ -1,324 +1,238 @@
-# Peezy CLI v1.0 - Hero Features Implementation
+# Hero Features Overview 🚀
 
-This document outlines the four major hero features implemented for Peezy CLI v1.0:
+## What Makes Peezy CLI Special
 
-## 🚀 1. Hero Experiences: Curated Full-Stack Templates
+Peezy CLI v1.0.2 introduces three **Hero Templates** - production-ready, full-stack applications that showcase modern development practices and enterprise-grade infrastructure.
 
-### New Templates Added
+## 🎯 Hero Templates
 
-#### Next.js Full-Stack (`nextjs-fullstack`)
+### 1. Next.js Full-Stack (`nextjs-fullstack`)
 
-- **Complete full-stack application** with Next.js 14 App Router
-- **Authentication** with NextAuth.js and Drizzle adapter
-- **Database integration** with PostgreSQL and Drizzle ORM
-- **Modern UI** with Tailwind CSS and Headless UI
-- **Type-safe** throughout with TypeScript
+**Complete Next.js 14 application with authentication, database, and modern UI**
+
+**Tech Stack:**
+
+- Next.js 14 with App Router
+- TypeScript for type safety
+- Tailwind CSS for styling
+- NextAuth.js for authentication
+- Drizzle ORM with PostgreSQL
+- Headless UI components
+
+**Features:**
+
+- 🔐 Built-in authentication system
+- 🗄️ Database integration with migrations
+- 🎨 Modern UI with Tailwind CSS
+- 🐳 Docker production deployment
+- 📱 Responsive design
+- 🔒 Security best practices
+
+### 2. Express + React Full-Stack (`express-fullstack`)
+
+**Express.js backend with React frontend, authentication, and database**
+
+**Tech Stack:**
+
+- Express.js with TypeScript
+- React 18 with TypeScript
+- Vite for frontend build
+- Drizzle ORM with PostgreSQL
+- JWT authentication
+- TanStack Query for state management
+
+**Features:**
+
+- 🚀 Separate frontend and backend
+- 🔐 JWT-based authentication
+- 🗄️ PostgreSQL with Drizzle ORM
+- 🎨 Tailwind CSS styling
+- 🧪 Vitest testing setup
+- 🐳 Docker Compose orchestration
+
+### 3. React SPA Advanced (`react-spa-advanced`)
+
+**Modern React SPA with routing, state management, and testing**
+
+**Tech Stack:**
+
+- React 18 with TypeScript
+- Vite for lightning-fast development
+- React Router for client-side routing
+- Zustand for state management
+- TanStack Query for server state
+- Framer Motion for animations
+
+**Features:**
+
+- 🎯 Advanced React patterns
+- 🗂️ Zustand state management
+- 🧪 Comprehensive testing with Vitest
+- 🎨 Beautiful UI with Headless UI
+- 📱 Responsive design
+- 🚀 Production-ready Nginx deployment
+
+## 🏗️ Infrastructure Excellence
+
+### Production-Ready from Day One
+
+Every hero template includes:
+
+- **Docker Support** - Multi-stage builds with security best practices
+- **Environment Configuration** - Comprehensive .env.example files
+- **Database Integration** - PostgreSQL with health checks
+- **Security Headers** - Helmet.js and proper CORS configuration
+- **Health Monitoring** - Application and container health checks
+
+### Developer Experience
+
+- **Hot Reload** - Instant feedback during development
+- **Type Safety** - Full TypeScript coverage
+- **Testing** - Pre-configured test suites
+- **Linting** - ESLint for code quality
+- **Documentation** - Comprehensive README files
+
+### Deployment Ready
+
+- **Docker Compose** - Local development environment
+- **Production Builds** - Optimized for performance
+- **Security** - Non-root containers and security headers
+- **Monitoring** - Health checks and logging
+
+## 🚀 Quick Start
 
 ```bash
+# Create a Next.js full-stack app
 peezy new nextjs-fullstack my-app
-```
 
-#### Express + React Full-Stack (`express-fullstack`)
+# Create an Express + React app
+peezy new express-fullstack my-api
 
-- **Express.js backend** with TypeScript and REST API
-- **React frontend** with Vite and modern tooling
-- **Shared authentication** with JWT tokens
-- **Database integration** with Drizzle ORM
-- **Concurrent development** setup
-
-```bash
-peezy new express-fullstack my-fullstack-app
-```
-
-#### Advanced React SPA (`react-spa-advanced`)
-
-- **Modern React SPA** with advanced features
-- **State management** with Zustand
-- **Data fetching** with TanStack Query
-- **Routing** with React Router v6
-- **Testing setup** with Vitest and Testing Library
-- **Animations** with Framer Motion
-
-```bash
+# Create an advanced React SPA
 peezy new react-spa-advanced my-spa
 ```
 
-### Enhanced Template Registry
+## 🎯 Why Hero Templates?
 
-Templates now support additional metadata:
+### 1. **Best Practices Built-In**
 
-- `hero: true` - Marks templates as curated hero experiences
-- `description` - Detailed template description
-- `tags` - Searchable tags for better discovery
+Each template follows industry best practices for:
 
-## 🔄 2. Migration System: Safe Project Updates
+- Security (authentication, CORS, headers)
+- Performance (optimized builds, caching)
+- Maintainability (TypeScript, testing, linting)
+- Scalability (Docker, database design)
 
-### Migration Command
+### 2. **Production-Ready Infrastructure**
 
-```bash
-# Preview migration changes
-peezy migrate --dry-run --template nextjs-fullstack
+No need to configure Docker, databases, or deployment - it's all included:
 
-# Interactive migration with conflict resolution
-peezy migrate --interactive --template nextjs-fullstack
+- Multi-stage Docker builds
+- Database migrations and seeding
+- Environment variable management
+- Health checks and monitoring
 
-# Force migration (use with caution)
-peezy migrate --force --template nextjs-fullstack --version latest
-```
+### 3. **Modern Tech Stack**
 
-### Features
+Stay current with the latest technologies:
 
-- **Template diffing** - Compare current project with target template
-- **Conflict detection** - Identify files that have been customized
-- **Interactive resolution** - Choose how to handle conflicts
-- **Backup creation** - Automatic backups before migration
-- **Safe updates** - Preview changes before applying
+- React 18 with concurrent features
+- Next.js 14 with App Router
+- TypeScript for type safety
+- Modern CSS with Tailwind
+- Latest database tools (Drizzle ORM)
 
-### Migration Process
+### 4. **Developer Experience**
 
-1. **Analysis** - Compare current project with target template
-2. **Conflict Detection** - Identify customized files
-3. **Preview** - Show what will change
-4. **Resolution** - Handle conflicts interactively or automatically
-5. **Backup** - Create backup if requested
-6. **Application** - Apply changes safely
-7. **Lock File Update** - Update project metadata
+Optimized for productivity:
 
-## 📦 3. Distribution: Multi-Platform Binaries
+- Instant hot reload
+- Comprehensive error handling
+- Clear documentation
+- Testing setup included
+- IDE-friendly configurations
 
-### Supported Platforms
+## 🔧 Customization Options
 
-- **macOS** (Intel & Apple Silicon)
-- **Linux** (x64 & ARM64)
-- **Windows** (x64)
-
-### Installation Methods
-
-#### Homebrew (macOS/Linux)
+### Database Configuration
 
 ```bash
-brew tap Sehnya/peezy
-brew install peezy
+# PostgreSQL (default)
+peezy new nextjs-fullstack my-app --databases postgresql
+
+# Multiple databases
+peezy new express-fullstack my-app --databases postgresql,redis
+
+# ORM selection
+peezy new nextjs-fullstack my-app --orm drizzle
 ```
 
-#### Scoop (Windows)
+### Authentication Options
 
 ```bash
-scoop bucket add peezy https://github.com/Sehnya/peezy-scoop
-scoop install peezy
+# NextAuth.js (Next.js templates)
+peezy new nextjs-fullstack my-app
+
+# JWT (Express templates)
+peezy new express-fullstack my-app
 ```
 
-#### Direct Download
+## 📊 Template Comparison
 
-```bash
-# One-liner installation script
-curl -fsSL https://raw.githubusercontent.com/Sehnya/peezy-cli/main/install.sh | bash
-```
+| Feature            | Next.js Fullstack | Express Fullstack | React SPA Advanced |
+| ------------------ | ----------------- | ----------------- | ------------------ |
+| **Framework**      | Next.js 14        | Express + React   | React SPA          |
+| **Rendering**      | SSR/SSG           | SPA               | SPA                |
+| **Authentication** | NextAuth.js       | JWT               | Client-side ready  |
+| **Database**       | Built-in          | Built-in          | API ready          |
+| **Deployment**     | Vercel/Docker     | Docker            | Nginx/CDN          |
+| **Best For**       | Full-stack apps   | API + Frontend    | Client-side apps   |
 
-### Build System
+## 🎓 Learning Path
 
-```bash
-# Build all platform binaries
-npm run build:binaries
+### Beginner
 
-# Update distribution files
-npm run update:distribution
+Start with **React SPA Advanced** to learn modern React patterns without backend complexity.
 
-# Complete release process
-npm run release
-```
+### Intermediate
 
-### Binary Features
+Try **Express Fullstack** to understand full-stack architecture with separate frontend and backend.
 
-- **Standalone executables** - No Node.js required
-- **Embedded templates** - All templates included
-- **Cross-platform** - Works on all major platforms
-- **Automatic updates** - Built-in update checking
+### Advanced
 
-## 🔐 4. Production Security: Sigstore Integration
+Use **Next.js Fullstack** for production applications requiring SSR, authentication, and database integration.
 
-### Keyless Signing
+## 🤝 Community
 
-Peezy now uses **Sigstore** for production-grade security:
+### Contributing
 
-- **Keyless signing** - No private keys to manage
-- **Transparency logs** - All signatures recorded publicly
-- **Certificate transparency** - Verifiable identity
-- **OIDC integration** - Uses existing identity providers
+- Template improvements welcome
+- Follow the established patterns
+- Include comprehensive tests
+- Update documentation
 
-### Security Commands
+### Support
 
-#### Template Verification
+- GitHub Issues for bugs
+- GitHub Discussions for questions
+- Community templates coming soon
 
-```bash
-# Verify template signature
-peezy verify-template ./my-template
+## 🔮 Roadmap
 
-# Verify with specific signature file
-peezy verify-template ./my-template --signature ./template.sig
-```
+### v1.1.0
 
-#### Trust Management
+- Plugin system for custom processors
+- Template marketplace
+- Advanced database migrations
+- Kubernetes templates
 
-```bash
-# List trusted signers
-peezy trust list
+### v1.2.0
 
-# Add trusted signer
-peezy trust add developer@company.com
-
-# Remove trusted signer
-peezy trust remove developer@company.com
-```
-
-#### Security Audit
-
-```bash
-# Audit project security
-peezy audit
-
-# JSON output for CI/CD
-peezy audit --json
-```
-
-### Trust Policy
-
-Configure security requirements in `~/.peezy/trust-policy.json`:
-
-```json
-{
-  "requireSignatures": true,
-  "allowUnsigned": false,
-  "trustedSigners": ["peezy-team@example.com", "your-team@company.com"],
-  "maxSignatureAge": 365
-}
-```
-
-### Template Signing Process
-
-1. **Content Hashing** - Calculate SHA-256 of template files
-2. **Sigstore Signing** - Sign hash with keyless signing
-3. **Transparency Log** - Record signature in public log
-4. **Bundle Creation** - Create signature bundle with certificate
-5. **Verification** - Verify against transparency log
-
-## 🎯 Usage Examples
-
-### Creating a Hero Experience Project
-
-```bash
-# Interactive creation with enhanced prompts
-peezy new
-
-# Direct creation of full-stack app
-peezy new nextjs-fullstack my-startup --databases postgresql --redis --orm drizzle
-
-# Advanced React SPA with all features
-peezy new react-spa-advanced my-dashboard
-```
-
-### Migrating Existing Projects
-
-```bash
-# Preview migration to hero template
-peezy migrate --dry-run --template nextjs-fullstack
-
-# Interactive migration with conflict resolution
-peezy migrate --interactive --template nextjs-fullstack
-
-# Migrate with backup
-peezy migrate --template nextjs-fullstack --backup
-```
-
-### Security Workflow
-
-```bash
-# Verify template before use
-peezy verify-template nextjs-fullstack
-
-# Audit project security
-peezy audit
-
-# Configure trust policy
-peezy trust add your-team@company.com
-```
-
-### Distribution and Installation
-
-```bash
-# Install via Homebrew
-brew install Sehnya/peezy/peezy
-
-# Install via script
-curl -fsSL https://raw.githubusercontent.com/Sehnya/peezy-cli/main/install.sh | bash
-
-# Verify installation
-peezy --version
-peezy doctor
-```
-
-## 🔧 Development
-
-### Building Binaries
-
-```bash
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Build platform binaries
-npm run build:binaries
-
-# Update distribution files
-npm run update:distribution
-```
-
-### Testing Security Features
-
-```bash
-# Test template signing (development mode)
-NODE_ENV=development peezy verify-template ./templates/nextjs-fullstack
-
-# Test migration system
-peezy migrate --dry-run --template nextjs-fullstack
-
-# Test binary creation
-npm run build:binaries
-```
-
-## 📋 Migration Guide
-
-### From v0.x to v1.0
-
-1. **Update CLI**: Install new version via preferred method
-2. **Review Templates**: Check if hero templates fit your needs
-3. **Migrate Projects**: Use `peezy migrate` for existing projects
-4. **Configure Security**: Set up trust policy if needed
-5. **Update CI/CD**: Use new binary distributions
-
-### Breaking Changes
-
-- Template registry now includes hero templates first
-- Security verification is more strict by default
-- Migration system replaces manual template updates
-- Binary distribution changes installation methods
-
-## 🚀 What's Next
-
-These hero features establish Peezy CLI as a production-ready tool for modern development workflows. Future enhancements will focus on:
-
-- **Plugin ecosystem** expansion
-- **Cloud integrations** (AWS, Vercel, Railway)
-- **Team collaboration** features
-- **Enterprise security** enhancements
-- **Performance optimizations**
+- GraphQL integration
+- Microservices templates
+- Advanced monitoring
+- Performance optimization tools
 
 ---
 
-**Ready to build something amazing?** Start with a hero template:
-
-```bash
-peezy new nextjs-fullstack my-next-big-thing
-```
+**Ready to build something amazing?** Choose your hero template and start coding! 🚀

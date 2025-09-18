@@ -30,7 +30,7 @@ const program = new Command();
 program
   .name("peezy")
   .description("Initialize projects across runtimes — instantly")
-  .version("1.0.0");
+  .version("1.0.2");
 
 /**
  * List command - show all available templates
