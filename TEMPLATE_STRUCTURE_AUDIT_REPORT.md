@@ -81,18 +81,18 @@
 
 ## 📋 Template Completeness Matrix
 
-| Template           | .env.example | README.md | Dockerfile | docker-compose | .gitignore | PostCSS | TypeScript | ESLint | Tests |
-| ------------------ | ------------ | --------- | ---------- | -------------- | ---------- | ------- | ---------- | ------ | ----- |
-| nextjs-fullstack   | ✅           | ✅        | ✅         | ✅             | ✅         | ✅      | ✅         | ✅     | ⚠️    |
-| express-fullstack  | ✅           | ✅        | ✅         | ✅             | ✅         | ✅      | ✅         | ✅     | ✅    |
-| react-spa-advanced | ✅           | ✅        | ✅         | ❌             | ✅         | ✅      | ✅         | ✅     | ✅    |
-| nextjs-app-router  | ✅           | ✅        | ✅         | ✅             | ❌         | ✅      | ✅         | ✅     | ⚠️    |
-| express-typescript | ✅           | ✅        | ✅         | ✅             | ❌         | ❌      | ✅         | ✅     | ⚠️    |
-| bun-react-tailwind | ✅           | ✅        | ❌         | ❌             | ✅         | ✅      | ✅         | ❌     | ❌    |
-| vite-vue-tailwind  | ✅           | ✅        | ❌         | ❌             | ✅         | ✅      | ✅         | ❌     | ❌    |
-| flask              | ✅           | ✅        | ❌         | ❌             | ❌         | ❌      | ❌         | ❌     | ❌    |
-| fastapi            | ✅           | ✅        | ❌         | ❌             | ❌         | ❌      | ❌         | ❌     | ❌    |
-| flask-bun-hybrid   | ✅           | ✅        | ❌         | ❌             | ❌         | ✅      | ✅         | ❌     | ❌    |
+| Template           | .env.example | README.md | Dockerfile | docker-compose | .gitignore | PostCSS | TypeScript | ESLint | Tests | .dockerignore |
+| ------------------ | ------------ | --------- | ---------- | -------------- | ---------- | ------- | ---------- | ------ | ----- | ------------- |
+| nextjs-fullstack   | ✅           | ✅        | ✅         | ✅             | ✅         | ✅      | ✅         | ✅     | ⚠️    | ✅            |
+| express-fullstack  | ✅           | ✅        | ✅         | ✅             | ✅         | ✅      | ✅         | ✅     | ✅    | ✅            |
+| react-spa-advanced | ✅           | ✅        | ✅         | ❌             | ✅         | ✅      | ✅         | ✅     | ✅    | ✅            |
+| nextjs-app-router  | ✅           | ✅        | ✅         | ✅             | ❌         | ✅      | ✅         | ✅     | ⚠️    | ✅            |
+| express-typescript | ✅           | ✅        | ✅         | ✅             | ❌         | ❌      | ✅         | ✅     | ⚠️    | ✅            |
+| bun-react-tailwind | ✅           | ✅        | ❌         | ❌             | ✅         | ✅      | ✅         | ✅     | ❌    | ❌            |
+| vite-vue-tailwind  | ✅           | ✅        | ❌         | ❌             | ✅         | ✅      | ✅         | ✅     | ❌    | ❌            |
+| flask              | ✅           | ✅        | ❌         | ❌             | ✅         | ❌      | ❌         | ❌     | ❌    | ❌            |
+| fastapi            | ✅           | ✅        | ❌         | ❌             | ✅         | ❌      | ❌         | ❌     | ❌    | ❌            |
+| flask-bun-hybrid   | ✅           | ✅        | ❌         | ❌             | ✅         | ✅      | ✅         | ❌     | ❌    | ❌            |
 
 ## 🎯 Production Readiness Assessment
 
