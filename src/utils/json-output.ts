@@ -1,3 +1,20 @@
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Read version from package.json
+let packageVersion = "1.0.0";
+try {
+  const packageJsonPath = join(__dirname, "../../package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+  packageVersion = packageJson.version;
+} catch {
+  // Fallback to hardcoded version if package.json can't be read
+  packageVersion = "1.0.0";
+}
+
 /**
  * Standardized JSON output format for CLI commands
  */
@@ -20,7 +37,7 @@ export function createSuccessOutput<T>(
     ok: true,
     data,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.5",
+    version: packageVersion,
   };
 }
 
@@ -35,7 +52,7 @@ export function createErrorOutput(
     ok: false,
     errors,
     warnings: warnings?.length ? warnings : undefined,
-    version: process.env.npm_package_version || "0.1.5",
+    version: packageVersion,
   };
 }
 
@@ -76,11 +93,15 @@ export class OutputCapture {
     };
 
     console.warn = (...args) => {
-      this.warnings.push(args.join(" "));
+      // Strip ANSI color codes from warnings
+      const message = args.join(" ").replace(/\x1b\[[0-9;]*m/g, "");
+      this.warnings.push(message);
     };
 
     console.error = (...args) => {
-      this.errors.push(args.join(" "));
+      // Strip ANSI color codes from errors
+      const message = args.join(" ").replace(/\x1b\[[0-9;]*m/g, "");
+      this.errors.push(message);
     };
   }
 
