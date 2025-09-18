@@ -19,10 +19,10 @@ jobs:
 
       - name: Setup Branch Protection Rules
         uses: actions/github-script@v7
+        continue-on-error: true # Don't fail if permissions are insufficient
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true # Don't fail if permissions are insufficient
-        script: |
+          script: |
           const owner = context.repo.owner;
           const repo = context.repo.repo;
 
