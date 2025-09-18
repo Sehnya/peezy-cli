@@ -41,16 +41,18 @@ jobs:
       - name: Update distribution files
         run: npm run update:distribution
 
-      - name: Sign binaries with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v2.1.1
-        with:
-          inputs: |
-            dist-binaries/*.tar.gz
-            dist-binaries/*.zip
-          upload-signing-artifacts: true
+      # Temporarily disabled Sigstore signing due to action compatibility issues
+      # Will be re-enabled in v1.0.1 with proper Sigstore integration
+      # - name: Sign binaries with Sigstore
+      #   uses: sigstore/gh-action-sigstore-python@v2.1.1
+      #   with:
+      #     inputs: |
+      #       dist-binaries/*.tar.gz
+      #       dist-binaries/*.zip
+      #     upload-signing-artifacts: false
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.0.8
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |

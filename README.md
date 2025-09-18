@@ -38,12 +38,13 @@ Install anywhere, instantly:
 
 ### 🔐 Production Security with Sigstore
 
-Enterprise-grade security without complexity:
+Enterprise-grade security framework ready for production:
 
-- **Keyless signing** - Templates signed with Sigstore transparency logs
-- **Automatic verification** - Templates verified before use
+- **Security framework** - Complete trust and verification system
+- **Template verification** - All templates verified before use
 - **Trust policies** - Configure security requirements for your team
 - **Audit system** - Comprehensive security reporting
+- **Sigstore ready** - Full keyless signing in v1.0.1 (currently using development signatures)
 
 ## 🎯 Core Features
 
