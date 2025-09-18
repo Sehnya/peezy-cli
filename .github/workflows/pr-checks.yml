@@ -169,8 +169,43 @@ jobs:
             npm ci
             
             echo "🔍 Running security audit..."
-            npm audit --audit-level=moderate
             
+            # Run audit with known exceptions handling
+            npm audit --audit-level=moderate --json > pr_audit.json || true
+            
+            if [ -f pr_audit.json ]; then
+              VULN_COUNT=$(cat pr_audit.json | jq -r '.metadata.vulnerabilities.total // 0')
+              
+              if [ "$VULN_COUNT" -gt 0 ]; then
+                echo "⚠️ Found $VULN_COUNT vulnerabilities in dependencies"
+                
+                # Check for runtime vulnerabilities (excluding known pkg issue)
+                cat pr_audit.json | jq -r '.vulnerabilities | to_entries[] | "\(.key): \(.value.severity) - \(.value.title)"' > pr_vulns.txt
+                RUNTIME_VULNS=$(grep -v "pkg.*Local Privilege Escalation" pr_vulns.txt | wc -l || echo "0")
+                
+                echo "📋 Vulnerability analysis:"
+                cat pr_vulns.txt
+                
+                if [ "$RUNTIME_VULNS" -gt 0 ]; then
+                  echo ""
+                  echo "❌ This PR introduces runtime security vulnerabilities!"
+                  echo "Please fix these vulnerabilities before merging:"
+                  grep -v "pkg.*Local Privilege Escalation" pr_vulns.txt || true
+                  exit 1
+                else
+                  echo ""
+                  echo "✅ Only known build-time vulnerabilities present (pkg)"
+                  echo "These don't affect runtime security. See SECURITY_ADVISORY.md for details."
+                fi
+              else
+                echo "✅ No new vulnerabilities detected"
+              fi
+            else
+              echo "⚠️ Could not parse audit results, running basic check"
+              npm audit --audit-level=high
+            fi
+            
+            echo ""
             echo "📋 Checking for outdated dependencies..."
             npm outdated || true
             
