@@ -50,6 +50,31 @@ jobs:
             didn't match the configured pattern. Please ensure that the subject
             doesn't start with an uppercase character.
 
+      - name: Run comprehensive checks
+        run: |
+          echo "🔍 Running comprehensive PR validation..."
+
+          # Run linting, tests, and build
+          npm run check
+
+          echo "✅ All checks passed"
+
+      - name: Test CLI functionality
+        run: |
+          echo "🧪 Testing CLI functionality..."
+
+          # Test basic CLI commands
+          node dist/index.js --version
+          node dist/index.js --help
+          node dist/index.js list --json
+          node dist/index.js doctor --json
+
+          # Test JSON output validation
+          OUTPUT=$(node dist/index.js list --json)
+          echo "$OUTPUT" | jq . > /dev/null || (echo "❌ Invalid JSON output" && exit 1)
+
+          echo "✅ CLI functionality tests passed"
+
       - name: Check for breaking changes
         run: |
           # Check if this PR might contain breaking changes
@@ -67,38 +92,197 @@ jobs:
           echo "📊 Change statistics:"
           git diff --stat origin/main...HEAD
 
+  template-integrity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Check template integrity
         run: |
-          # Verify that template changes don't break existing functionality
-          if git diff --name-only origin/main...HEAD | grep "templates/" > /dev/null; then
-            echo "🔍 Template changes detected, running integrity checks..."
-            
-            # Check that all hero templates still have required structure
-            for template in nextjs-fullstack express-fullstack react-spa-advanced; do
-              if [ -d "templates/$template" ]; then
-                echo "Checking $template structure..."
-                test -f "templates/$template/package.json" || (echo "❌ Missing package.json in $template" && exit 1)
+          echo "🔍 Running comprehensive template integrity checks..."
+
+          # Check all templates, not just when changed
+          TEMPLATES_DIR="templates"
+          FAILED_TEMPLATES=()
+
+          if [ -d "$TEMPLATES_DIR" ]; then
+            for template_path in "$TEMPLATES_DIR"/*; do
+              if [ -d "$template_path" ]; then
+                template=$(basename "$template_path")
+                echo "Checking $template template..."
+                
+                # Basic structure checks
+                if [ ! -f "$template_path/package.json" ]; then
+                  echo "❌ Missing package.json in $template"
+                  FAILED_TEMPLATES+=("$template")
+                  continue
+                fi
+                
+                # Validate package.json is valid JSON
+                if ! jq . "$template_path/package.json" > /dev/null 2>&1; then
+                  echo "❌ Invalid package.json in $template"
+                  FAILED_TEMPLATES+=("$template")
+                  continue
+                fi
                 
                 # Check for required directories based on template type
                 case $template in
                   "nextjs-fullstack")
-                    test -d "templates/$template/src/components" || (echo "❌ Missing components dir in $template" && exit 1)
-                    test -d "templates/$template/src/app" || (echo "❌ Missing app dir in $template" && exit 1)
+                    [ -d "$template_path/src/components" ] || { echo "❌ Missing components dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -d "$template_path/src/app" ] || { echo "❌ Missing app dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/next.config.js" ] || [ -f "$template_path/next.config.mjs" ] || { echo "❌ Missing Next.js config in $template"; FAILED_TEMPLATES+=("$template"); continue; }
                     ;;
                   "express-fullstack")
-                    test -d "templates/$template/src/client" || (echo "❌ Missing client dir in $template" && exit 1)
-                    test -d "templates/$template/src/server" || (echo "❌ Missing server dir in $template" && exit 1)
+                    [ -d "$template_path/src/client" ] || { echo "❌ Missing client dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -d "$template_path/src/server" ] || { echo "❌ Missing server dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
                     ;;
                   "react-spa-advanced")
-                    test -d "templates/$template/src/components" || (echo "❌ Missing components dir in $template" && exit 1)
-                    test -d "templates/$template/src/pages" || (echo "❌ Missing pages dir in $template" && exit 1)
+                    [ -d "$template_path/src/components" ] || { echo "❌ Missing components dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -d "$template_path/src/pages" ] || { echo "❌ Missing pages dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/vite.config.ts" ] || [ -f "$template_path/vite.config.js" ] || { echo "❌ Missing Vite config in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    ;;
+                  "bun-react-tailwind"|"vite-vue-tailwind")
+                    [ -d "$template_path/src" ] || { echo "❌ Missing src dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/vite.config.ts" ] || [ -f "$template_path/vite.config.js" ] || { echo "❌ Missing Vite config in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    ;;
+                  "flask"|"fastapi")
+                    [ -f "$template_path/app.py" ] || [ -f "$template_path/main.py" ] || [ -d "$template_path/src" ] || { echo "❌ Missing Python entry point in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/requirements.txt" ] || { echo "❌ Missing requirements.txt in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    ;;
+                  "nextjs-app-router")
+                    [ -d "$template_path/src/app" ] || { echo "❌ Missing app dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/next.config.js" ] || [ -f "$template_path/next.config.mjs" ] || { echo "❌ Missing Next.js config in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    ;;
+                  "express-typescript")
+                    [ -d "$template_path/src" ] || { echo "❌ Missing src dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -f "$template_path/tsconfig.json" ] || { echo "❌ Missing TypeScript config in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    ;;
+                  "flask-bun-hybrid")
+                    [ -f "$template_path/app.py" ] || [ -f "$template_path/main.py" ] || [ -d "$template_path/backend" ] || { echo "❌ Missing Python backend in $template"; FAILED_TEMPLATES+=("$template"); continue; }
+                    [ -d "$template_path/frontend" ] || [ -d "$template_path/client" ] || { echo "❌ Missing frontend dir in $template"; FAILED_TEMPLATES+=("$template"); continue; }
                     ;;
                 esac
+                
+                # Check for common required files
+                [ -f "$template_path/.gitignore" ] || { echo "⚠️ Missing .gitignore in $template (recommended)"; }
+                [ -f "$template_path/README.md" ] || { echo "⚠️ Missing README.md in $template (recommended)"; }
                 
                 echo "✅ $template structure is valid"
               fi
             done
+            
+            # Report results
+            if [ ${#FAILED_TEMPLATES[@]} -gt 0 ]; then
+              echo ""
+              echo "❌ Template integrity check failed for: ${FAILED_TEMPLATES[*]}"
+              exit 1
+            else
+              echo ""
+              echo "✅ All templates passed integrity checks"
+            fi
+          else
+            echo "⚠️ Templates directory not found"
           fi
+
+  version-consistency:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          echo "🔍 Checking version consistency across files..."
+
+          # Get version from package.json
+          PACKAGE_VERSION=$(jq -r '.version' package.json)
+          echo "📦 package.json version: $PACKAGE_VERSION"
+
+          # Check CLI version string in src/index.ts
+          if grep -q "\.version(\"$PACKAGE_VERSION\")" src/index.ts; then
+            echo "✅ CLI version string matches: $PACKAGE_VERSION"
+          else
+            echo "❌ CLI version string doesn't match package.json"
+            echo "Expected: .version(\"$PACKAGE_VERSION\")"
+            echo "Found in src/index.ts:"
+            grep "\.version(" src/index.ts || echo "No version string found"
+            exit 1
+          fi
+
+          # Check if version follows semver
+          SEMVER_PATTERN='^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$'
+          if echo "$PACKAGE_VERSION" | grep -E "$SEMVER_PATTERN" > /dev/null; then
+            echo "✅ Version follows semantic versioning"
+          else
+            echo "❌ Version doesn't follow semantic versioning: $PACKAGE_VERSION"
+            exit 1
+          fi
+
+  registry-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate template registry
+        run: |
+          echo "🔍 Validating template registry..."
+
+          # Build first to ensure TypeScript compiles
+          npm run build
+
+          # Test registry loading
+          node -e "
+            import('./dist/registry.js').then(({ registry, getOrderedTemplates }) => {
+              console.log('📋 Registry loaded successfully');
+              console.log('Templates found:', Object.keys(registry).length);
+              
+              const ordered = getOrderedTemplates();
+              console.log('Ordered templates:', ordered.length);
+              
+              // Validate each template entry
+              for (const [key, template] of Object.entries(registry)) {
+                if (!template.title) {
+                  console.error(\`❌ Template \${key} missing title\`);
+                  process.exit(1);
+                }
+                
+                if (typeof template.popular !== 'boolean') {
+                  console.error(\`❌ Template \${key} missing or invalid popular flag\`);
+                  process.exit(1);
+                }
+                
+                console.log(\`✅ \${key}: \${template.title}\`);
+              }
+              
+              console.log('✅ Registry validation passed');
+            }).catch(err => {
+              console.error('❌ Registry validation failed:', err);
+              process.exit(1);
+            });
+          "
 
   size-impact:
     runs-on: ubuntu-latest
@@ -126,11 +310,19 @@ jobs:
           # Calculate current build size
           CURRENT_SIZE=$(du -sb dist/ | cut -f1)
 
+          # Store current branch name
+          CURRENT_BRANCH=$(git branch --show-current)
+
           # Checkout main and build
+          git stash push -m "temp stash for size comparison" || true
           git checkout origin/main
           npm ci
           npm run build
           MAIN_SIZE=$(du -sb dist/ | cut -f1)
+
+          # Return to original branch
+          git checkout "$CURRENT_BRANCH" || git checkout -
+          git stash pop || true
 
           # Calculate difference
           SIZE_DIFF=$((CURRENT_SIZE - MAIN_SIZE))

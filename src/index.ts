@@ -23,6 +23,7 @@ import {
   createAuditCommand,
 } from "./commands/security.js";
 import { migrateCommand } from "./commands/migrate.js";
+import { addFiles } from "./commands/addfile.js";
 import type { NewOptions, TemplateKey, PackageManager } from "./types.js";
 
 const program = new Command();
@@ -30,7 +31,7 @@ const program = new Command();
 program
   .name("peezy")
   .description("Initialize projects across runtimes — instantly")
-  .version("1.0.2");
+  .version("1.0.3");
 
 /**
  * List command - show all available templates
@@ -986,6 +987,51 @@ program.addCommand(createAuditCommand());
 
 // Add migration command
 program.addCommand(migrateCommand);
+
+/**
+ * Add File command - intelligently add configuration files to existing projects
+ */
+program
+  .command("addfile")
+  .alias("add-file")
+  .description("Add configuration files to your existing project")
+  .option("--json", "Output in JSON format")
+  .option("--force", "Overwrite existing files")
+  .option("--category <category>", "Filter by file category")
+  .action(async (options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      await addFiles(process.cwd(), {
+        json: options.json,
+        force: options.force,
+        category: options.category,
+      });
+
+      if (options.json) {
+        const { warnings, errors } = outputCapture.stop();
+        // Success output is handled within addFiles function
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Failed to add files: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
+  });
 
 // Parse command line arguments
 await program.parseAsync(process.argv).catch((error) => {

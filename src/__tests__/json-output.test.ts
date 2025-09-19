@@ -1,8 +1,11 @@
 import { execSync } from "node:child_process";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 describe("JSON Output", () => {
-  const cliPath = path.resolve(__dirname, "../../dist/index.js");
+  // Find the project root and resolve to dist/index.js
+  const projectRoot = path.resolve(__dirname, "../..");
+  const cliPath = path.join(projectRoot, "dist", "index.js");
 
   const runCommand = (
     cmd: string

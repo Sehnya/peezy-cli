@@ -51,7 +51,7 @@ Thank you for your interest in contributing to Peezy CLI! This document provides
    ```bash
    npm test                    # Run all tests
    npm run build              # Build TypeScript
-   npm run pre-flight         # Run pre-flight checks
+   npm run check              # Run comprehensive checks
    ```
 
 4. **Commit your changes**

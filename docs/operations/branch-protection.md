@@ -6,7 +6,7 @@
 
 - **Multi-Node Testing** - Tests on Node.js 20.x and 22.x
 - **Security Auditing** - Automated vulnerability scanning
-- **Code Quality Checks** - TypeScript validation and pre-flight checks
+- **Code Quality Checks** - TypeScript validation and comprehensive checks
 - **Cross-Platform Testing** - Ubuntu, Windows, macOS compatibility
 - **Template Structure Validation** - Ensures hero templates maintain proper structure
 
@@ -69,7 +69,7 @@
 1. **test (20.x)** - Tests on Node.js 20
 2. **test (22.x)** - Tests on Node.js 22
 3. **security** - Security audit and vulnerability scan
-4. **code-quality** - TypeScript validation and pre-flight checks
+4. **code-quality** - TypeScript validation and comprehensive checks
 5. **compatibility (ubuntu-latest, 20.x)** - Linux compatibility
 6. **compatibility (windows-latest, 20.x)** - Windows compatibility
 7. **compatibility (macos-latest, 20.x)** - macOS compatibility
@@ -80,7 +80,7 @@
 
 1. **Fork repository** and create feature branch
 2. **Make changes** following contribution guidelines
-3. **Run tests locally**: `npm test`, `npm run build`, `npm run pre-flight`
+3. **Run tests locally**: `npm test`, `npm run build`, `npm run check`
 4. **Create PR** using the provided template
 5. **Address review feedback** and ensure all checks pass
 6. **Merge** after approval and passing checks
