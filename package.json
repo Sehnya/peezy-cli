@@ -1,6 +1,6 @@
 {
   "name": "peezy-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Production-ready CLI for scaffolding modern applications with curated full-stack templates, intelligent migrations, and enterprise security.",
   "type": "module",
   "bin": {
@@ -26,7 +26,8 @@
     "build:binaries": "node scripts/build-binaries.js",
     "update:distribution": "node scripts/update-distribution.js",
     "test:distribution": "node scripts/test-distribution.js",
-    "pre-flight": "node scripts/pre-flight-check.js",
+    "check": "npm run lint && npm test && npm run build",
+    "validate:workflows": "node scripts/validate-workflows.js",
     "lint": "tsc --noEmit",
     "release": "npm run build && npm run build:binaries && npm run update:distribution"
   },
@@ -87,6 +88,7 @@
     "@types/prompts": "^2.4.9",
     "@types/semver": "^7.5.6",
     "jest": "^29.7.0",
+    "js-yaml": "^4.1.0",
     "pkg": "^5.8.1",
     "ts-jest": "^29.1.2",
     "typescript": "^5.5.4",

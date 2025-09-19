@@ -37,7 +37,11 @@ jobs:
                   'code-quality',
                   'compatibility (ubuntu-latest, 20.x)',
                   'compatibility (windows-latest, 20.x)',
-                  'compatibility (macos-latest, 20.x)'
+                  'compatibility (macos-latest, 20.x)',
+                  'pr-validation',
+                  'template-integrity',
+                  'version-consistency',
+                  'registry-validation'
                 ]
               },
               enforce_admins: false, // Allow admins to bypass for emergency fixes

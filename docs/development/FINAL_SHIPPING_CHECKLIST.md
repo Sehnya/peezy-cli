@@ -1,11 +1,11 @@
 # 🚀 Final Shipping Checklist - Peezy CLI v1.0.0
 
-## ✅ Pre-Flight Verification
+## ✅ Comprehensive Validation
 
-### 1. Run Pre-Flight Check
+### 1. Run Comprehensive Check
 
 ```bash
-npm run pre-flight
+npm run check
 ```
 
 **Expected Result**: All checks should pass ✅

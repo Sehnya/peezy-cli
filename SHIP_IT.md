@@ -1,11 +1,11 @@
 # 🚀 SHIP IT! Peezy CLI v1.0.0
 
-## Final Pre-Flight Check
+## Final Validation Check
 
 Run this to ensure everything is ready:
 
 ```bash
-npm run pre-flight
+npm run check
 ```
 
 ## Shipping Commands
@@ -151,8 +151,8 @@ Everything is prepared for the v1.0.0 release. This represents a major milestone
 **Time to ship! 🚢**
 
 ```bash
-# Run the pre-flight check
-npm run pre-flight
+# Run the validation check
+npm run check
 
 # If all green, execute the shipping commands above
 # Then watch the magic happen! ✨

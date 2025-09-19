@@ -58,7 +58,7 @@ npm run unlink:global # Unlink global CLI
 ```bash
 npm run build:binaries    # Build cross-platform binaries
 npm run test:distribution # Test distribution setup
-npm run pre-flight       # Comprehensive pre-release checks
+npm run check            # Comprehensive validation checks
 ```
 
 ## 🏗️ Project Structure
@@ -112,11 +112,11 @@ peezy new nextjs-fullstack test-project
 cd test-project && npm install && npm run build
 ```
 
-### Pre-Flight Checks
+### Comprehensive Checks
 
 ```bash
 # Comprehensive checks before committing
-npm run pre-flight
+npm run check
 
 # This runs:
 # - Version consistency checks
@@ -145,7 +145,7 @@ git checkout -b feature/your-feature-name
 ```bash
 npm test                    # Run all tests
 npm run build              # Build TypeScript
-npm run pre-flight         # Run comprehensive checks
+npm run check              # Run comprehensive checks
 ```
 
 ### 4. Commit Changes

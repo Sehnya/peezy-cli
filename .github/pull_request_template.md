@@ -46,7 +46,7 @@ Fixes #(issue number)
 ```bash
 npm test
 npm run build
-npm run pre-flight
+npm run check
 ```
 
 ## Template Changes (if applicable)

@@ -138,8 +138,8 @@ npx tsc --noEmit --strict
 # Lint for security issues
 npm run lint
 
-# Pre-flight security checks
-npm run pre-flight
+# Comprehensive security checks
+npm run check
 ```
 
 ### Template Security

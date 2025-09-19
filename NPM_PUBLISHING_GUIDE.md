@@ -12,8 +12,8 @@ The GitHub Actions workflow will automatically publish to npm when you push the 
 ### Publishing Process
 
 ```bash
-# 1. Run pre-flight check
-npm run pre-flight
+# 1. Run comprehensive checks
+npm run check
 
 # 2. Commit final changes
 git add .

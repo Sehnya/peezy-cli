@@ -193,23 +193,33 @@ jobs:
       - name: Check TypeScript types
         run: npx tsc --noEmit
 
-      - name: Run pre-flight checks
-        run: npm run pre-flight
+      - name: Run comprehensive checks
+        run: npm run check
 
       - name: Test template structures
         run: |
+          echo "🔍 Testing template structures..."
+
           # Verify hero templates have required directories
-          test -d templates/nextjs-fullstack/src/components
-          test -d templates/nextjs-fullstack/src/app
-          test -d templates/nextjs-fullstack/public
+          echo "Checking nextjs-fullstack..."
+          test -d templates/nextjs-fullstack/src/components || { echo "❌ Missing components dir"; exit 1; }
+          test -d templates/nextjs-fullstack/src/app || { echo "❌ Missing app dir"; exit 1; }
+          test -d templates/nextjs-fullstack/public || { echo "❌ Missing public dir"; exit 1; }
+          echo "✅ nextjs-fullstack structure valid"
 
-          test -d templates/express-fullstack/src/client/components
-          test -d templates/express-fullstack/src/client/pages
-          test -d templates/express-fullstack/public
+          echo "Checking express-fullstack..."
+          test -d templates/express-fullstack/src/client/components || { echo "❌ Missing client components dir"; exit 1; }
+          test -d templates/express-fullstack/src/client/pages || { echo "❌ Missing client pages dir"; exit 1; }
+          test -d templates/express-fullstack/public || { echo "❌ Missing public dir"; exit 1; }
+          echo "✅ express-fullstack structure valid"
 
-          test -d templates/react-spa-advanced/src/components
-          test -d templates/react-spa-advanced/src/pages
-          test -d templates/react-spa-advanced/public
+          echo "Checking react-spa-advanced..."
+          test -d templates/react-spa-advanced/src/components || { echo "❌ Missing components dir"; exit 1; }
+          test -d templates/react-spa-advanced/src/pages || { echo "❌ Missing pages dir"; exit 1; }
+          test -d templates/react-spa-advanced/public || { echo "❌ Missing public dir"; exit 1; }
+          echo "✅ react-spa-advanced structure valid"
+
+          echo "✅ All template structures validated"
 
   compatibility:
     runs-on: ${{ matrix.os }}
