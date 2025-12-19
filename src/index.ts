@@ -18,6 +18,7 @@ import {
   OutputCapture,
 } from "./utils/json-output.js";
 import {
+  createSignCommand,
   createVerifyCommand,
   createTrustCommand,
   createAuditCommand,
@@ -981,12 +982,78 @@ program
   });
 
 // Add security commands
-program.addCommand(createVerifyCommand().name("verify-template"));
+program.addCommand(createSignCommand());
+program.addCommand(createVerifyCommand());
 program.addCommand(createTrustCommand());
 program.addCommand(createAuditCommand());
 
 // Add migration command
 program.addCommand(migrateCommand);
+
+/**
+ * Search command - search remote templates
+ */
+program
+  .command("search")
+  .argument("<query>", "Search query")
+  .option("--json", "Output in JSON format")
+  .description("Search remote templates by name or tags")
+  .action(async (query: string, options) => {
+    const outputCapture = new OutputCapture();
+
+    if (options.json) {
+      outputCapture.start();
+    }
+
+    try {
+      const { getRemoteRegistry } = await import("./registry.js");
+      const registry = getRemoteRegistry();
+      const results = await registry.searchTemplates(query);
+
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createSuccessOutput(
+          {
+            query,
+            results: results.map((t) => ({
+              name: t.name,
+              latest: t.latest,
+              versions: Object.keys(t.versions),
+              tags: t.versions[t.latest]?.tags || [],
+            })),
+          },
+          warnings
+        );
+        outputJson(output);
+      } else {
+        console.log();
+        if (results.length === 0) {
+          log.warn(`No templates found matching "${query}"`);
+        } else {
+          log.info(`Found ${results.length} template(s):`);
+          for (const t of results) {
+            const tags = t.versions[t.latest]?.tags?.join(", ") || "";
+            console.log(`  ${t.name}@${t.latest}`);
+            if (tags) console.log(`    Tags: ${tags}`);
+          }
+        }
+      }
+    } catch (error) {
+      if (options.json) {
+        const { warnings } = outputCapture.stop();
+        const output = createErrorOutput(
+          [error instanceof Error ? error.message : String(error)],
+          warnings
+        );
+        outputJson(output);
+      } else {
+        log.err(
+          `Search failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
+  });
 
 /**
  * Add File command - intelligently add configuration files to existing projects

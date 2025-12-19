@@ -4,13 +4,16 @@ import os from "node:os";
 import { createHash } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import { createWriteStream } from "node:fs";
+import { execSync } from "node:child_process";
 import { log } from "../utils/logger.js";
 import type {
   RemoteRegistry,
   RegistryCache,
-  CachedTemplate,
   RemoteTemplate,
 } from "../types.js";
+
+const DEFAULT_REGISTRY_URL =
+  "https://raw.githubusercontent.com/Sehnya/peezy-registry/main/registry.json";
 
 export class RemoteRegistryService {
   private readonly cacheDir: string;
@@ -19,9 +22,7 @@ export class RemoteRegistryService {
 
   constructor(registryUrl?: string) {
     this.cacheDir = path.join(os.homedir(), ".peezy", "registry");
-    this.registryUrl =
-      registryUrl ||
-      "https://raw.githubusercontent.com/Sehnya/peezy-registry/main/registry.json";
+    this.registryUrl = registryUrl || DEFAULT_REGISTRY_URL;
     this.ensureCacheDir();
   }
 
@@ -38,77 +39,191 @@ export class RemoteRegistryService {
   private loadCache(): RegistryCache {
     try {
       if (fs.existsSync(this.cacheFile)) {
-        const content = fs.readFileSync(this.cacheFile, "utf-8");
-        return JSON.parse(content);
+        return JSON.parse(fs.readFileSync(this.cacheFile, "utf-8"));
       }
-    } catch (error) {
-      log.warn(
-        `Failed to load registry cache: ${error instanceof Error ? error.message : String(error)}`
-      );
+    } catch {
+      // Ignore cache errors
     }
-
-    return {
-      lastFetch: 0,
-      templates: {},
-    };
+    return { lastFetch: 0, templates: {} };
   }
 
   private saveCache(cache: RegistryCache): void {
     try {
       fs.writeFileSync(this.cacheFile, JSON.stringify(cache, null, 2));
-    } catch (error) {
-      log.warn(
-        `Failed to save registry cache: ${error instanceof Error ? error.message : String(error)}`
-      );
+    } catch {
+      // Ignore cache save errors
     }
   }
 
   private async fetchRegistry(): Promise<RemoteRegistry> {
-    try {
-      const response = await fetch(this.registryUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return await response.json();
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch registry: ${error instanceof Error ? error.message : String(error)}`
-      );
+    const response = await fetch(this.registryUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    return await response.json();
   }
 
   async getRegistry(forceRefresh = false): Promise<RemoteRegistry> {
     const cache = this.loadCache();
     const now = Date.now();
 
-    // Return cached registry if valid and not forcing refresh
-    if (
-      !forceRefresh &&
-      cache.registry &&
-      now - cache.lastFetch < this.cacheTtl
-    ) {
+    if (!forceRefresh && cache.registry && now - cache.lastFetch < this.cacheTtl) {
       return cache.registry;
     }
 
     try {
       log.info("Fetching remote registry...");
       const registry = await this.fetchRegistry();
-
-      // Update cache
       cache.registry = registry;
       cache.lastFetch = now;
       this.saveCache(cache);
-
       return registry;
     } catch (error) {
-      // Fall back to cached registry if available
       if (cache.registry) {
-        log.warn(
-          `Failed to fetch registry, using cached version: ${error instanceof Error ? error.message : String(error)}`
-        );
+        log.warn("Using cached registry (fetch failed)");
         return cache.registry;
       }
-      throw error;
+      // Return empty registry if no cache and fetch fails
+      return { $schema: "", version: 1, templates: [], plugins: [] };
+    }
+  }
+
+
+  /**
+   * Download template from GitHub repo directly
+   * Supports: github:owner/repo, github:owner/repo#branch, github:owner/repo/path
+   */
+  async downloadFromGitHub(spec: string): Promise<string> {
+    const match = spec.match(/^github:([^/#]+)\/([^/#]+)(?:\/([^#]+))?(?:#(.+))?$/);
+    if (!match) {
+      throw new Error("Invalid GitHub spec. Use: github:owner/repo or github:owner/repo#branch");
+    }
+
+    const [, owner, repo, subpath, ref] = match;
+    const branch = ref || "main";
+    const cacheKey = `github-${owner}-${repo}-${branch}${subpath ? `-${subpath.replace(/\//g, "-")}` : ""}`;
+    const templateDir = path.join(this.cacheDir, "templates", cacheKey);
+
+    // Check cache
+    const cache = this.loadCache();
+    const cached = cache.templates[cacheKey];
+    if (cached && fs.existsSync(cached.path)) {
+      const cacheAge = Date.now() - cached.cachedAt;
+      if (cacheAge < this.cacheTtl) {
+        log.info(`Using cached: ${cacheKey}`);
+        return cached.path;
+      }
+    }
+
+    log.info(`Downloading from GitHub: ${owner}/${repo}${ref ? `#${ref}` : ""}...`);
+
+    // Download as tarball
+    const tarballUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.tar.gz`;
+    const tarballPath = path.join(this.cacheDir, `${cacheKey}.tar.gz`);
+
+    try {
+      await this.downloadFile(tarballUrl, tarballPath);
+
+      // Extract
+      if (fs.existsSync(templateDir)) {
+        fs.rmSync(templateDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(templateDir, { recursive: true });
+
+      execSync(`tar -xzf "${tarballPath}" -C "${templateDir}" --strip-components=1`, { stdio: "pipe" });
+
+      // If subpath specified, move that directory
+      if (subpath) {
+        const subDir = path.join(templateDir, subpath);
+        if (!fs.existsSync(subDir)) {
+          throw new Error(`Path "${subpath}" not found in repository`);
+        }
+        const tempDir = path.join(this.cacheDir, `temp-${Date.now()}`);
+        fs.renameSync(subDir, tempDir);
+        fs.rmSync(templateDir, { recursive: true, force: true });
+        fs.renameSync(tempDir, templateDir);
+      }
+
+      // Clean up tarball
+      fs.unlinkSync(tarballPath);
+
+      // Update cache
+      cache.templates[cacheKey] = {
+        name: cacheKey,
+        version: branch,
+        path: templateDir,
+        cachedAt: Date.now(),
+        integrity: "",
+      };
+      this.saveCache(cache);
+
+      log.ok(`Downloaded: ${cacheKey}`);
+      return templateDir;
+    } catch (error) {
+      if (fs.existsSync(tarballPath)) fs.unlinkSync(tarballPath);
+      if (fs.existsSync(templateDir)) fs.rmSync(templateDir, { recursive: true, force: true });
+      throw new Error(`GitHub download failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Download template from npm package
+   */
+  async downloadFromNpm(packageName: string, version?: string): Promise<string> {
+    const spec = version ? `${packageName}@${version}` : packageName;
+    const cacheKey = spec.replace(/[@/]/g, "-");
+    const templateDir = path.join(this.cacheDir, "templates", cacheKey);
+
+    // Check cache
+    const cache = this.loadCache();
+    const cached = cache.templates[cacheKey];
+    if (cached && fs.existsSync(cached.path)) {
+      log.info(`Using cached: ${spec}`);
+      return cached.path;
+    }
+
+    log.info(`Downloading from npm: ${spec}...`);
+
+    try {
+      // Get package info from npm
+      const infoRes = await fetch(`https://registry.npmjs.org/${packageName}`);
+      if (!infoRes.ok) throw new Error(`Package not found: ${packageName}`);
+      const info = await infoRes.json();
+
+      const targetVersion = version || info["dist-tags"]?.latest;
+      if (!targetVersion || !info.versions?.[targetVersion]) {
+        throw new Error(`Version not found: ${targetVersion}`);
+      }
+
+      const tarballUrl = info.versions[targetVersion].dist?.tarball;
+      if (!tarballUrl) throw new Error("No tarball URL found");
+
+      const tarballPath = path.join(this.cacheDir, `${cacheKey}.tgz`);
+      await this.downloadFile(tarballUrl, tarballPath);
+
+      // Extract (npm tarballs have a "package" directory)
+      if (fs.existsSync(templateDir)) {
+        fs.rmSync(templateDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(templateDir, { recursive: true });
+
+      execSync(`tar -xzf "${tarballPath}" -C "${templateDir}" --strip-components=1`, { stdio: "pipe" });
+      fs.unlinkSync(tarballPath);
+
+      // Update cache
+      cache.templates[cacheKey] = {
+        name: packageName,
+        version: targetVersion,
+        path: templateDir,
+        cachedAt: Date.now(),
+        integrity: info.versions[targetVersion].dist?.integrity || "",
+      };
+      this.saveCache(cache);
+
+      log.ok(`Downloaded: ${spec}`);
+      return templateDir;
+    } catch (error) {
+      throw new Error(`npm download failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -117,71 +232,28 @@ export class RemoteRegistryService {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-
-    if (!response.body) {
-      throw new Error("No response body");
-    }
-
+    if (!response.body) throw new Error("No response body");
     const fileStream = createWriteStream(destPath);
     await pipeline(response.body as any, fileStream);
   }
 
-  private async extractTarball(
-    tarballPath: string,
-    destDir: string
-  ): Promise<void> {
-    const { execSync } = await import("node:child_process");
-
-    try {
-      // Ensure destination directory exists
-      fs.mkdirSync(destDir, { recursive: true });
-
-      // Check if tar command is available
-      try {
-        execSync("which tar", { stdio: "pipe" });
-      } catch {
-        throw new Error(
-          "tar command not found. Please install tar or use a different extraction method."
-        );
-      }
-
-      // Extract tarball with error handling
-      execSync(
-        `tar -xzf "${tarballPath}" -C "${destDir}" --strip-components=1`,
-        {
-          stdio: "pipe",
-        }
-      );
-    } catch (error) {
-      throw new Error(
-        `Failed to extract tarball: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  private verifyIntegrity(
-    filePath: string,
-    expectedIntegrity: string
-  ): boolean {
+  private verifyIntegrity(filePath: string, expectedIntegrity: string): boolean {
+    if (!expectedIntegrity) return true;
     try {
       const [algorithm, expectedHash] = expectedIntegrity.split("-");
       const fileContent = fs.readFileSync(filePath);
-      const actualHash = createHash(algorithm)
-        .update(fileContent)
-        .digest("base64");
+      const actualHash = createHash(algorithm).update(fileContent).digest("base64");
       return actualHash === expectedHash;
-    } catch (error) {
-      log.warn(
-        `Failed to verify integrity: ${error instanceof Error ? error.message : String(error)}`
-      );
+    } catch {
       return false;
     }
   }
 
-  async downloadTemplate(
-    templateName: string,
-    version?: string
-  ): Promise<string> {
+
+  /**
+   * Download template from registry
+   */
+  async downloadTemplate(templateName: string, version?: string): Promise<string> {
     const registry = await this.getRegistry();
     const template = registry.templates.find((t) => t.name === templateName);
 
@@ -193,52 +265,39 @@ export class RemoteRegistryService {
     const versionInfo = template.versions[targetVersion];
 
     if (!versionInfo) {
-      throw new Error(
-        `Version "${targetVersion}" not found for template "${templateName}"`
-      );
+      throw new Error(`Version "${targetVersion}" not found for "${templateName}"`);
     }
 
-    const cache = this.loadCache();
     const cacheKey = `${templateName}@${targetVersion}`;
-    const cachedTemplate = cache.templates[cacheKey];
+    const cache = this.loadCache();
+    const cached = cache.templates[cacheKey];
 
-    // Check if already cached and valid
-    if (cachedTemplate && fs.existsSync(cachedTemplate.path)) {
-      log.info(`Using cached template: ${cacheKey}`);
-      return cachedTemplate.path;
+    if (cached && fs.existsSync(cached.path)) {
+      log.info(`Using cached: ${cacheKey}`);
+      return cached.path;
     }
 
-    // Download and cache template
-    const templateDir = path.join(
-      this.cacheDir,
-      "templates",
-      templateName,
-      targetVersion
-    );
+    const templateDir = path.join(this.cacheDir, "templates", templateName.replace(/[@/]/g, "-"), targetVersion);
 
     if (versionInfo.tarball) {
-      log.info(`Downloading template ${cacheKey}...`);
-
-      const tarballPath = path.join(
-        this.cacheDir,
-        `${templateName}-${targetVersion}.tgz`
-      );
+      log.info(`Downloading: ${cacheKey}...`);
+      const tarballPath = path.join(this.cacheDir, `${cacheKey.replace(/[@/]/g, "-")}.tgz`);
 
       try {
         await this.downloadFile(versionInfo.tarball, tarballPath);
 
-        // Verify integrity
-        if (!this.verifyIntegrity(tarballPath, versionInfo.integrity)) {
+        if (versionInfo.integrity && !this.verifyIntegrity(tarballPath, versionInfo.integrity)) {
           throw new Error("Integrity check failed");
         }
 
-        // Extract tarball
-        await this.extractTarball(tarballPath, templateDir);
+        if (fs.existsSync(templateDir)) {
+          fs.rmSync(templateDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(templateDir, { recursive: true });
 
-        // Clean up tarball
+        execSync(`tar -xzf "${tarballPath}" -C "${templateDir}" --strip-components=1`, { stdio: "pipe" });
         fs.unlinkSync(tarballPath);
 
-        // Update cache
         cache.templates[cacheKey] = {
           name: templateName,
           version: targetVersion,
@@ -248,24 +307,18 @@ export class RemoteRegistryService {
         };
         this.saveCache(cache);
 
-        log.ok(`Template ${cacheKey} cached successfully`);
+        log.ok(`Downloaded: ${cacheKey}`);
         return templateDir;
       } catch (error) {
-        // Clean up on failure
-        if (fs.existsSync(tarballPath)) {
-          fs.unlinkSync(tarballPath);
-        }
-        if (fs.existsSync(templateDir)) {
-          fs.rmSync(templateDir, { recursive: true, force: true });
-        }
+        if (fs.existsSync(tarballPath)) fs.unlinkSync(tarballPath);
+        if (fs.existsSync(templateDir)) fs.rmSync(templateDir, { recursive: true, force: true });
         throw error;
       }
     } else if (versionInfo.npm) {
-      // Handle npm packages (future enhancement)
-      throw new Error("NPM package templates not yet supported");
-    } else {
-      throw new Error("No download source available for template");
+      return this.downloadFromNpm(versionInfo.npm, targetVersion);
     }
+
+    throw new Error("No download source available");
   }
 
   async listTemplates(): Promise<RemoteTemplate[]> {
@@ -273,18 +326,22 @@ export class RemoteRegistryService {
     return registry.templates;
   }
 
+  async searchTemplates(query: string): Promise<RemoteTemplate[]> {
+    const registry = await this.getRegistry();
+    const q = query.toLowerCase();
+    return registry.templates.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.versions[t.latest]?.tags?.some((tag) => tag.toLowerCase().includes(q))
+    );
+  }
+
   async clearCache(): Promise<void> {
-    try {
-      if (fs.existsSync(this.cacheDir)) {
-        fs.rmSync(this.cacheDir, { recursive: true, force: true });
-      }
-      this.ensureCacheDir();
-      log.ok("Registry cache cleared");
-    } catch (error) {
-      throw new Error(
-        `Failed to clear cache: ${error instanceof Error ? error.message : String(error)}`
-      );
+    if (fs.existsSync(this.cacheDir)) {
+      fs.rmSync(this.cacheDir, { recursive: true, force: true });
     }
+    this.ensureCacheDir();
+    log.ok("Cache cleared");
   }
 
   getCacheInfo(): { size: number; templates: number; lastFetch: Date | null } {
@@ -294,27 +351,18 @@ export class RemoteRegistryService {
     try {
       if (fs.existsSync(this.cacheDir)) {
         const calculateSize = (dir: string): number => {
-          let totalSize = 0;
-          const items = fs.readdirSync(dir);
-
-          for (const item of items) {
+          let total = 0;
+          for (const item of fs.readdirSync(dir)) {
             const itemPath = path.join(dir, item);
             const stat = fs.statSync(itemPath);
-
-            if (stat.isDirectory()) {
-              totalSize += calculateSize(itemPath);
-            } else {
-              totalSize += stat.size;
-            }
+            total += stat.isDirectory() ? calculateSize(itemPath) : stat.size;
           }
-
-          return totalSize;
+          return total;
         };
-
         size = calculateSize(this.cacheDir);
       }
-    } catch (error) {
-      // Ignore errors when calculating size
+    } catch {
+      // Ignore size calculation errors
     }
 
     return {
@@ -322,5 +370,17 @@ export class RemoteRegistryService {
       templates: Object.keys(cache.templates).length,
       lastFetch: cache.lastFetch > 0 ? new Date(cache.lastFetch) : null,
     };
+  }
+
+  listCachedTemplates(): Array<{ name: string; version: string; path: string; cachedAt: Date }> {
+    const cache = this.loadCache();
+    return Object.values(cache.templates)
+      .filter((t) => fs.existsSync(t.path))
+      .map((t) => ({
+        name: t.name,
+        version: t.version,
+        path: t.path,
+        cachedAt: new Date(t.cachedAt),
+      }));
   }
 }

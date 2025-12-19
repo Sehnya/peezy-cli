@@ -1,23 +1,36 @@
 /**
- * Logger utility with light/dark theme compatible colors
- * Uses ANSI colors that work well in both terminal themes
+ * Logger utility with Peezy brand colors
+ * Light Yellow + Forest Green theme
  */
+
+// ANSI escape codes
+const ESC = "\x1b[";
+const RESET = `${ESC}0m`;
+
+// Brand colors
+const YELLOW = `${ESC}38;5;228m`; // Light yellow (primary)
+const GREEN = `${ESC}38;5;71m`; // Forest green (secondary/success)
+const GOLD = `${ESC}38;5;186m`; // Soft gold (accent)
+const RED = `${ESC}38;5;203m`; // Coral red (error)
+const SAGE = `${ESC}38;5;115m`; // Sage green (info)
+const DIM = `${ESC}38;5;245m`; // Gray (dim)
+
 export const log = {
-  info: (s: string, ...args: any[]) =>
-    console.log(`\x1b[36m›\x1b[0m ${s}`, ...args), // Cyan - readable on both backgrounds
-  ok: (s: string, ...args: any[]) =>
-    console.log(`\x1b[32m✓\x1b[0m ${s}`, ...args), // Green - universally positive
-  warn: (s: string, ...args: any[]) =>
-    console.warn(`\x1b[33m!\x1b[0m ${s}`, ...args), // Yellow - caution indicator
-  err: (s: string, ...args: any[]) =>
-    console.error(`\x1b[31m✗\x1b[0m ${s}`, ...args), // Red - clear danger signal
-  debug: (s: string, ...args: any[]) => {
+  info: (s: string, ...args: unknown[]) =>
+    console.log(`${SAGE}›${RESET} ${s}`, ...args),
+  ok: (s: string, ...args: unknown[]) =>
+    console.log(`${GREEN}✓${RESET} ${s}`, ...args),
+  warn: (s: string, ...args: unknown[]) =>
+    console.warn(`${YELLOW}!${RESET} ${YELLOW}${s}${RESET}`, ...args),
+  err: (s: string, ...args: unknown[]) =>
+    console.error(`${RED}✗${RESET} ${RED}${s}${RESET}`, ...args),
+  debug: (s: string, ...args: unknown[]) => {
     if (process.env.DEBUG || process.env.PEEZY_DEBUG) {
-      console.log(`\x1b[90m🐛\x1b[0m ${s}`, ...args); // Gray debug messages
+      console.log(`${DIM}⚙${RESET} ${DIM}${s}${RESET}`, ...args);
     }
   },
 
-  // Special formatting for popular templates
-  popular: (s: string) => `\x1b[93m⭐\x1b[0m ${s}`, // Bright yellow star
-  highlight: (s: string) => `\x1b[96m${s}\x1b[0m`, // Bright cyan for highlights
+  // Special formatting
+  popular: (s: string) => `${GOLD}⭐${RESET} ${s}`,
+  highlight: (s: string) => `${YELLOW}${s}${RESET}`,
 };

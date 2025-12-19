@@ -187,13 +187,34 @@ export const getTemplate = (key: TemplateKey) => {
 };
 
 /**
- * Resolve template path (local or remote)
+ * Resolve template path (local, remote, GitHub, or npm)
  */
 export async function resolveTemplate(templateName: string): Promise<{
   path: string;
   isRemote: boolean;
   version?: string;
+  source: "local" | "registry" | "github" | "npm";
 }> {
+  // GitHub source
+  if (templateName.startsWith("github:")) {
+    const templatePath = await remoteRegistry.downloadFromGitHub(templateName);
+    return { path: templatePath, isRemote: true, source: "github" };
+  }
+
+  // npm source
+  if (templateName.startsWith("npm:")) {
+    const spec = templateName.slice(4);
+    const atIndex = spec.lastIndexOf("@");
+    let packageName = spec;
+    let version: string | undefined;
+    if (atIndex > 0) {
+      packageName = spec.slice(0, atIndex);
+      version = spec.slice(atIndex + 1);
+    }
+    const templatePath = await remoteRegistry.downloadFromNpm(packageName, version);
+    return { path: templatePath, isRemote: true, version, source: "npm" };
+  }
+
   const parsed = parseTemplateName(templateName);
 
   // Check if it's a local template first
@@ -201,10 +222,11 @@ export async function resolveTemplate(templateName: string): Promise<{
     return {
       path: localRegistry[parsed.name].path,
       isRemote: false,
+      source: "local",
     };
   }
 
-  // Try to resolve as remote template
+  // Try to resolve as remote registry template
   try {
     const templatePath = await remoteRegistry.downloadTemplate(
       parsed.fullName,
@@ -214,10 +236,15 @@ export async function resolveTemplate(templateName: string): Promise<{
       path: templatePath,
       isRemote: true,
       version: parsed.version,
+      source: "registry",
     };
   } catch (error) {
     throw new Error(
-      `Template "${templateName}" not found in local or remote registry: ${error instanceof Error ? error.message : String(error)}`
+      `Template "${templateName}" not found. Try:\n` +
+        `  - Local: peezy list\n` +
+        `  - GitHub: peezy add github:owner/repo\n` +
+        `  - npm: peezy add npm:package-name\n` +
+        `  - Registry: peezy add @scope/template`
     );
   }
 }

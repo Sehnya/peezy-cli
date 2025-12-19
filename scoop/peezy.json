@@ -1,13 +1,12 @@
 {
-  "version": "1.0.0-alpha.1",
-  "description": "Cross-runtime CLI for scaffolding modern applications with deterministic builds",
+  "version": "1.0.3",
+  "description": "Production-ready CLI for scaffolding modern applications with curated full-stack templates",
   "homepage": "https://github.com/Sehnya/peezy-cli",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/Sehnya/peezy-cli/releases/download/v1.0.0-alpha.1alpha.1/peezy-windows-x64.zip",
-      "hash": "CHECKSUM_NOT_FOUND",
-      "extract_dir": "."
+      "url": "https://github.com/Sehnya/peezy-cli/releases/download/v1.0.3/peezy-windows-x64.zip",
+      "hash": "REPLACE_WITH_WINDOWS_X64_CHECKSUM"
     }
   },
   "bin": "peezy-windows-x64.exe",
@@ -20,5 +19,8 @@
         "url": "https://github.com/Sehnya/peezy-cli/releases/download/v$version/peezy-windows-x64.zip"
       }
     }
+  },
+  "suggest": {
+    "Node.js": "nodejs"
   }
 }

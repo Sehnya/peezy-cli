@@ -1,116 +1,206 @@
 #!/usr/bin/env node
 
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.join(__dirname, "..");
 const distDir = path.join(rootDir, "dist-binaries");
 
+// Platforms to build for
 const platforms = [
   { os: "linux", arch: "x64", target: "node20-linux-x64" },
   { os: "linux", arch: "arm64", target: "node20-linux-arm64" },
   { os: "macos", arch: "x64", target: "node20-macos-x64" },
   { os: "macos", arch: "arm64", target: "node20-macos-arm64" },
-  { os: "windows", arch: "x64", target: "node20-win-x64" },
+  { os: "windows", arch: "x64", target: "node20-win-x64", ext: ".exe" },
 ];
 
-async function buildBinaries() {
-  console.log("🔨 Building standalone binaries...");
+// Detect current platform
+function getCurrentPlatform() {
+  const os = process.platform === "darwin" ? "macos" : process.platform === "win32" ? "windows" : "linux";
+  const arch = process.arch === "arm64" ? "arm64" : "x64";
+  return { os, arch };
+}
 
-  // Clean dist directory
+// Check if pkg is installed
+function checkPkg() {
+  try {
+    execSync("pkg --version", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Calculate SHA256 checksum
+async function calculateChecksum(filePath) {
+  const content = await fs.readFile(filePath);
+  return createHash("sha256").update(content).digest("hex");
+}
+
+async function buildBinaries(options = {}) {
+  const { currentOnly = false, verbose = false } = options;
+  const currentPlatform = getCurrentPlatform();
+
+  console.log("🔨 Building standalone binaries...");
+  console.log(`   Current platform: ${currentPlatform.os}-${currentPlatform.arch}`);
+
+  // Clean and create dist directory
   await fs.rm(distDir, { recursive: true, force: true });
   await fs.mkdir(distDir, { recursive: true });
 
   // Build TypeScript first
-  console.log("📦 Building TypeScript...");
-  execSync("npm run build", { cwd: rootDir, stdio: "inherit" });
+  console.log("\n📦 Building TypeScript...");
+  execSync("npm run build", { cwd: rootDir, stdio: verbose ? "inherit" : "pipe" });
 
-  // Install pkg if not available
-  try {
-    execSync("pkg --version", { stdio: "ignore" });
-  } catch {
-    console.log("📥 Installing pkg...");
+  // Check for pkg
+  if (!checkPkg()) {
+    console.log("📥 Installing pkg globally...");
     execSync("npm install -g pkg", { stdio: "inherit" });
   }
 
-  // Create package.json for pkg
-  const pkgConfig = {
-    name: "peezy-cli",
-    version: "1.0.0",
-    bin: "dist/index.js",
-    pkg: {
-      assets: ["templates/**/*", "dist/**/*"],
-      outputPath: distDir,
-    },
-  };
+  // Determine which platforms to build
+  const targetPlatforms = currentOnly
+    ? platforms.filter((p) => p.os === currentPlatform.os && p.arch === currentPlatform.arch)
+    : platforms;
 
-  await fs.writeFile(
-    path.join(rootDir, "pkg.json"),
-    JSON.stringify(pkgConfig, null, 2)
-  );
-
-  // Build for each platform
-  for (const platform of platforms) {
-    const outputName = `peezy-${platform.os}-${platform.arch}${platform.os === "windows" ? ".exe" : ""}`;
-    const outputPath = path.join(distDir, outputName);
-
-    console.log(`🏗️  Building for ${platform.os}-${platform.arch}...`);
-
-    try {
-      execSync(
-        `pkg --config pkg.json --target ${platform.target} --output ${outputPath} dist/index.js`,
-        { cwd: rootDir, stdio: "inherit" }
-      );
-
-      // Create compressed archive
-      const archiveName = `peezy-${platform.os}-${platform.arch}.tar.gz`;
-      const archivePath = path.join(distDir, archiveName);
-
-      if (platform.os === "windows") {
-        // Use zip for Windows
-        const zipName = `peezy-${platform.os}-${platform.arch}.zip`;
-        const zipPath = path.join(distDir, zipName);
-        execSync(`zip -j ${zipPath} ${outputPath}`, { cwd: distDir });
-      } else {
-        execSync(`tar -czf ${archiveName} -C ${distDir} ${outputName}`, {
-          cwd: rootDir,
-        });
-      }
-
-      console.log(`✅ Built ${outputName}`);
-    } catch (error) {
-      console.error(
-        `❌ Failed to build for ${platform.os}-${platform.arch}:`,
-        error.message
-      );
-    }
+  if (targetPlatforms.length === 0) {
+    console.error("❌ No matching platforms found");
+    process.exit(1);
   }
 
-  // Generate checksums
-  console.log("🔐 Generating checksums...");
-  const files = await fs.readdir(distDir);
+  console.log(`\n🎯 Building for ${targetPlatforms.length} platform(s)...\n`);
+
+  const results = [];
   const checksums = [];
 
-  for (const file of files) {
-    if (file.endsWith(".tar.gz") || file.endsWith(".zip")) {
-      const filePath = path.join(distDir, file);
-      const checksum = execSync(`shasum -a 256 ${filePath}`, {
-        encoding: "utf-8",
-      }).trim();
-      checksums.push(checksum);
+  // Build for each platform
+  for (const platform of targetPlatforms) {
+    const ext = platform.ext || "";
+    const binaryName = `peezy-${platform.os}-${platform.arch}${ext}`;
+    const outputPath = path.join(distDir, binaryName);
+
+    console.log(`🏗️  Building ${binaryName}...`);
+
+    try {
+      // Build with pkg
+      const pkgCmd = `pkg --target ${platform.target} --output "${outputPath}" dist/index.js`;
+      execSync(pkgCmd, { cwd: rootDir, stdio: verbose ? "inherit" : "pipe" });
+
+      // Verify binary was created
+      await fs.access(outputPath);
+      const stats = await fs.stat(outputPath);
+
+      // Create archive
+      let archiveName, archivePath;
+      if (platform.os === "windows") {
+        archiveName = `peezy-${platform.os}-${platform.arch}.zip`;
+        archivePath = path.join(distDir, archiveName);
+        
+        // Use PowerShell on Windows, zip on Unix
+        if (process.platform === "win32") {
+          execSync(`powershell Compress-Archive -Path "${outputPath}" -DestinationPath "${archivePath}"`, { stdio: "pipe" });
+        } else {
+          execSync(`zip -j "${archivePath}" "${outputPath}"`, { cwd: distDir, stdio: "pipe" });
+        }
+      } else {
+        archiveName = `peezy-${platform.os}-${platform.arch}.tar.gz`;
+        archivePath = path.join(distDir, archiveName);
+        execSync(`tar -czf "${archiveName}" "${binaryName}"`, { cwd: distDir, stdio: "pipe" });
+      }
+
+      // Calculate checksum
+      const checksum = await calculateChecksum(archivePath);
+      checksums.push(`${checksum}  ${archiveName}`);
+
+      results.push({
+        platform: `${platform.os}-${platform.arch}`,
+        binary: binaryName,
+        archive: archiveName,
+        size: (stats.size / 1024 / 1024).toFixed(2) + " MB",
+        checksum: checksum.substring(0, 16) + "...",
+        success: true,
+      });
+
+      console.log(`   ✅ ${binaryName} (${results[results.length - 1].size})`);
+    } catch (error) {
+      console.error(`   ❌ Failed: ${error.message}`);
+      results.push({
+        platform: `${platform.os}-${platform.arch}`,
+        success: false,
+        error: error.message,
+      });
     }
   }
 
-  await fs.writeFile(path.join(distDir, "checksums.txt"), checksums.join("\n"));
+  // Write checksums file
+  if (checksums.length > 0) {
+    const checksumsPath = path.join(distDir, "checksums.txt");
+    await fs.writeFile(checksumsPath, checksums.join("\n") + "\n");
+    console.log("\n🔐 Checksums written to checksums.txt");
+  }
 
-  // Clean up
-  await fs.unlink(path.join(rootDir, "pkg.json"));
+  // Summary
+  console.log("\n" + "=".repeat(50));
+  console.log("📊 Build Summary");
+  console.log("=".repeat(50));
 
-  console.log("🎉 Binary build complete!");
-  console.log(`📁 Binaries available in: ${distDir}`);
+  const successful = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
+
+  console.log(`   ✅ Successful: ${successful.length}`);
+  console.log(`   ❌ Failed: ${failed.length}`);
+  console.log(`   📁 Output: ${distDir}`);
+
+  if (failed.length > 0) {
+    console.log("\n⚠️  Failed builds:");
+    failed.forEach((r) => console.log(`   - ${r.platform}: ${r.error}`));
+  }
+
+  // List output files
+  console.log("\n📦 Output files:");
+  const files = await fs.readdir(distDir);
+  for (const file of files.sort()) {
+    const stats = await fs.stat(path.join(distDir, file));
+    const size = (stats.size / 1024 / 1024).toFixed(2);
+    console.log(`   ${file} (${size} MB)`);
+  }
+
+  console.log("\n🎉 Build complete!");
+
+  return { results, checksums };
 }
 
-buildBinaries().catch(console.error);
+// CLI handling
+const args = process.argv.slice(2);
+const options = {
+  currentOnly: args.includes("--current") || args.includes("-c"),
+  verbose: args.includes("--verbose") || args.includes("-v"),
+};
+
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+Peezy CLI Binary Builder
+
+Usage: node scripts/build-binaries.js [options]
+
+Options:
+  -c, --current   Build only for current platform
+  -v, --verbose   Show detailed build output
+  -h, --help      Show this help message
+
+Examples:
+  node scripts/build-binaries.js           # Build all platforms
+  node scripts/build-binaries.js --current # Build current platform only
+`);
+  process.exit(0);
+}
+
+buildBinaries(options).catch((error) => {
+  console.error("❌ Build failed:", error);
+  process.exit(1);
+});
