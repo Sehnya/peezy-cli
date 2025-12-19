@@ -1,6 +1,6 @@
 {
   "name": "peezy-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Production-ready CLI for scaffolding modern applications with curated full-stack templates, intelligent migrations, and enterprise security.",
   "type": "module",
   "bin": {
